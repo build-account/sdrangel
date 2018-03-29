@@ -1,6 +1,10 @@
 os: osx
 language: cpp
 compiler: clang
+before_install:
+  # Fix stupid Homebrew issue with gcc vs oclint
+  # https://github.com/travis-ci/travis-ci/issues/8826
+  - brew cask uninstall oclint
 install:
   - brew install cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost
 script:
