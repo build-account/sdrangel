@@ -10,11 +10,11 @@ install:
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
             if ! brew outdated $f; then
-                brew upgrade $f
-            fi
+                brew upgrade $f;
+            fi;
         else
-            brew install $f
-        fi
+            brew install $f;
+        fi;
     done
 script:
   - mkdir build
