@@ -1,0 +1,9 @@
+os: osx
+language: cpp
+compiler: clang
+install:
+  - brew install cmake pkg-config fftw libiconv libusb libbladerf libairspy hackrf ffmpeg librtlsdr nanomsg qt boost
+script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_C_FLAGS_RELEASE=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE=-DNDEBUG -DCMAKE_INSTALL_PREFIX=$(brew --prefix) -DCMAKE_BUILD_TYPE=Release -DCMAKE_FIND_FRAMEWORK=LAST -DCMAKE_VERBOSE_MAKEFILE=ON -Wno-dev ..
