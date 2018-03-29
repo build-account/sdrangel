@@ -48,6 +48,7 @@ target_link_libraries(demoddatv
 	sdrgui
 	${AVCODEC_LIBRARIES}
 	${AVFORMAT_LIBRARIES}
+	${AVUTIL_LIBRARIES}
 	${SWSCALE_LIBRARIES}
 )
 
