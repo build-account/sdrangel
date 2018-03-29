@@ -6,7 +6,7 @@ before_install:
   # https://github.com/travis-ci/travis-ci/issues/8826
   - brew cask uninstall oclint
 install:
-  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost"
+  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
             if ! brew outdated $f; then
