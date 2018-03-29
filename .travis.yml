@@ -6,6 +6,8 @@ before_install:
   # https://github.com/travis-ci/travis-ci/issues/8826
   - brew cask uninstall oclint
 install:
+  - export HOMEBREW_NO_AUTO_UPDATE=1
+  - brew update
   - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
