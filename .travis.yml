@@ -2,7 +2,7 @@ os: osx
 language: cpp
 compiler: clang
 install:
-  - brew install cmake pkg-config fftw libiconv libusb libbladerf libairspy hackrf ffmpeg librtlsdr nanomsg qt boost
+  - brew install cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost
 script:
   - mkdir build
   - cd build
