@@ -9,12 +9,22 @@ install:
   - export HOMEBREW_NO_AUTO_UPDATE=1
   - brew update
   - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost";
+    echo "Dependencies: $formulas";
     for f in $formulas; do
+        echo "Checking dependency $f... ";
         if brew ls --versions $f >/dev/null; then
+            echo "already installed";
+            echo "Checking whether dependency $f is outdated... ";
             if ! brew outdated $f; then
+                echo "yes";
+                echo "Upgrading dependency $f...";
                 brew upgrade $f;
+            else
+                echo "no";
             fi;
         else
+            echo "not installed";
+            echo "Installing dependency $f...";
             brew install $f;
         fi;
     done
