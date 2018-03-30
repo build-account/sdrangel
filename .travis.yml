@@ -28,8 +28,6 @@ install:
             brew install $f;
         fi;
     done
-  # This is a "HEAD only" package (installs directly from Git repository)
-  - brew install --HEAD libmirisdr
   # librtlsdr stable 0.5.3 does not have rtlsdr_set_tuner_bandwidth()
   # therefore use bleeding edge version. But this currently does not build due
   # to a small error which needs the following patch
