@@ -31,7 +31,7 @@ install:
 script:
   - mkdir build
   - cd build
-  - cmake
+  - Qt5Core_DIR=/usr/local/opt/qt cmake
         -DCMAKE_C_FLAGS_RELEASE=-DNDEBUG
         -DCMAKE_CXX_FLAGS_RELEASE=-DNDEBUG
         -DCMAKE_INSTALL_PREFIX=$(brew --prefix)
