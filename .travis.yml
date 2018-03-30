@@ -5,12 +5,19 @@ before_install:
   # Fix stupid Homebrew issue with gcc vs oclint
   # https://github.com/travis-ci/travis-ci/issues/8826
   - brew cask uninstall oclint
-  - pip uninstall numpy
+  # numpy seems to be already installed which interferes with Homebrew
+  - pip2 uninstall numpy
 install:
+  # Prevent Homebrew updating itself before each install step
   - export HOMEBREW_NO_AUTO_UPDATE=1
+  # Fix limesuite not finding Python installation
   - export CPLUS_INCLUDE_PATH="/usr/local/include"
+  # Additional (optional) dependencies
   - brew tap pothosware/pothos
   - brew update
+  # This is required because brew fails if a package is already installed but
+  # needs an upgrade. Therefore check if it is installed, if so then upgrade,
+  # otherwise install package.
   - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost opencv limesuite airspyhf";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
@@ -21,6 +28,7 @@ install:
             brew install $f;
         fi;
     done
+  # This is a "HEAD only" package (installs directly from Git repository)
   - brew install --HEAD libmirisdr
 script:
   - mkdir build
