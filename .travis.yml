@@ -18,7 +18,7 @@ install:
   # This is required because brew fails if a package is already installed but
   # needs an upgrade. Therefore check if it is installed, if so then upgrade,
   # otherwise install package.
-  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost opencv limesuite airspyhf";
+  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg nanomsg qt boost opencv limesuite airspyhf";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
             if ! brew outdated $f; then
@@ -30,6 +30,50 @@ install:
     done
   # This is a "HEAD only" package (installs directly from Git repository)
   - brew install --HEAD libmirisdr
+  # librtlsdr stable 0.5.3 does not have rtlsdr_set_tuner_bandwidth()
+  # therefore use bleeding edge version. But this currently does not build due
+  # to a small error which needs the following patch
+  # TODO: Submit patch upstream
+  - |
+    cat <<EOF | patch -d $(brew --repo homebrew/core)/Formula
+    diff --git a/Formula/librtlsdr.rb b/Formula/librtlsdr.rb
+    index 9a0ec3de6c..1d14a1102d 100644
+    --- a/Formula/librtlsdr.rb
+    +++ b/Formula/librtlsdr.rb
+    @@ -5,6 +5,10 @@ class Librtlsdr < Formula
+       sha256 "98fb5c34ac94d6f2235a0bb41a08f8bed7949e1d1b91ea57a7c1110191ea58de"
+       head "git://git.osmocom.org/rtl-sdr.git", :shallow => false
+     
+    +  head do
+    +    patch :DATA
+    +  end
+    +
+       bottle do
+         cellar :any
+         rebuild 1
+    @@ -27,3 +31,20 @@ class Librtlsdr < Formula
+         end
+       end
+     end
+    +
+    +__END__
+    +diff --git a/src/rtl_test.c b/src/rtl_test.c
+    +index 8bf567e..7f04373 100644
+    +--- a/src/rtl_test.c
+    ++++ b/src/rtl_test.c
+    +@@ -145,8 +145,8 @@ static int ppm_gettime(struct timespec *ts)
+    + 	struct timeval tv;
+    +
+    + 	rv = gettimeofday(&tv, NULL);
+    +-	ts->tv_sec = tv.tv_sec;
+    +-	ts->tv_nsec = tv.tv_usec * 1000;
+    ++	ts.tv_sec = tv.tv_sec;
+    ++	ts.tv_nsec = tv.tv_usec * 1000;
+    + #endif
+    + 	return rv;
+    + }
+    EOF
+  - brew install --HEAD librtlsdr
 script:
   - mkdir build
   - cd build
