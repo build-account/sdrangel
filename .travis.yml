@@ -32,11 +32,11 @@ script:
   - mkdir build
   - cd build
   - Qt5Core_DIR=/usr/local/opt/qt cmake
-        -DCMAKE_C_FLAGS_RELEASE=-DNDEBUG
-        -DCMAKE_CXX_FLAGS_RELEASE=-DNDEBUG
-        -DCMAKE_INSTALL_PREFIX=$(brew --prefix)
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_FIND_FRAMEWORK=LAST
-        -DCMAKE_VERBOSE_MAKEFILE=ON
-        -Wno-dev
-        ..
+    -DCMAKE_C_FLAGS_RELEASE=-DNDEBUG
+    -DCMAKE_CXX_FLAGS_RELEASE=-DNDEBUG
+    -DCMAKE_INSTALL_PREFIX=$(brew --prefix)
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_FIND_FRAMEWORK=LAST
+    -DCMAKE_VERBOSE_MAKEFILE=ON
+    -Wno-dev
+    ..
