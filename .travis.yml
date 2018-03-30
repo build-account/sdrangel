@@ -7,8 +7,9 @@ before_install:
   - brew cask uninstall oclint
 install:
   - export HOMEBREW_NO_AUTO_UPDATE=1
+  - brew tap pothosware/pothos
   - brew update
-  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost";
+  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost opencv limesuite libmirisdr libairspyhf";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
             if ! brew outdated $f; then
