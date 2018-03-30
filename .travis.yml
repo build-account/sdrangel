@@ -6,7 +6,7 @@ before_install:
   # https://github.com/travis-ci/travis-ci/issues/8826
   - brew cask uninstall oclint
   # numpy seems to be already installed which interferes with Homebrew
-  - pip2 uninstall numpy
+  - pip2 uninstall -y numpy
 install:
   # Prevent Homebrew updating itself before each install step
   - export HOMEBREW_NO_AUTO_UPDATE=1
