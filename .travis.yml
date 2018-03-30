@@ -5,11 +5,13 @@ before_install:
   # Fix stupid Homebrew issue with gcc vs oclint
   # https://github.com/travis-ci/travis-ci/issues/8826
   - brew cask uninstall oclint
+  - pip uninstall numpy
 install:
   - export HOMEBREW_NO_AUTO_UPDATE=1
+  - export CPLUS_INCLUDE_PATH="/usr/local/include"
   - brew tap pothosware/pothos
   - brew update
-  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost opencv limesuite libmirisdr libairspyhf";
+  - formulas="cmake pkg-config fftw libiconv libusb libbladerf airspy hackrf ffmpeg librtlsdr nanomsg qt boost opencv limesuite airspyhf";
     for f in $formulas; do
         if brew ls --versions $f >/dev/null; then
             if ! brew outdated $f; then
@@ -19,6 +21,7 @@ install:
             brew install $f;
         fi;
     done
+  - brew install --HEAD libmirisdr
 script:
   - mkdir build
   - cd build
