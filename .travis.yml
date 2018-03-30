@@ -31,3 +31,5 @@ script:
         -DCMAKE_VERBOSE_MAKEFILE=ON
         -Wno-dev
         ..
+  - make
+  - make install
