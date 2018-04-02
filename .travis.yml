@@ -31,7 +31,7 @@ install:
   # librtlsdr stable 0.5.3 does not have rtlsdr_set_tuner_bandwidth()
   # therefore use bleeding edge version. But this currently does not build due
   # to a small error which needs the following patch
-  # TODO: Submit patch upstream
+  # Patch is currently pending: https://osmocom.org/issues/3130
   - |
     cat <<EOF | patch -d $(brew --repo homebrew/core)/Formula
     diff --git a/Formula/librtlsdr.rb b/Formula/librtlsdr.rb
