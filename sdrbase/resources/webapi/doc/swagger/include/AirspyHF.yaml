@@ -17,4 +17,14 @@ AirspyHFSettings:
       format: int64      
     bandIndex:
       type: integer
-    
+    fileRecordName:
+      type: string
+       
+AirspyHFReport:
+  description: AirspyHF
+  properties:
+    sampleRates:
+      type: array
+      items:
+        $ref: "/doc/swagger/include/Structs.yaml#/SampleRate"  
+ 

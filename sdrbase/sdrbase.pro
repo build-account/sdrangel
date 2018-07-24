@@ -32,11 +32,11 @@ CONFIG(Debug):build_subdir = debug
 
 CONFIG(ANDROID):INCLUDEPATH += /opt/softs/boost_1_60_0
 
-CONFIG(MINGW32):INCLUDEPATH += "D:\boost_1_58_0"
-CONFIG(MINGW64):INCLUDEPATH += "D:\boost_1_58_0"
+CONFIG(MINGW32):INCLUDEPATH += "C:\softs\boost_1_66_0"
+CONFIG(MINGW64):INCLUDEPATH += "C:\softs\boost_1_66_0"
 
-CONFIG(MINGW32):INCLUDEPATH += "D:\softs\serialDV"
-CONFIG(MINGW64):INCLUDEPATH += "D:\softs\serialDV"
+CONFIG(MINGW32):INCLUDEPATH += "C:\softs\serialDV"
+CONFIG(MINGW64):INCLUDEPATH += "C:\softs\serialDV"
 
 CONFIG(macx):INCLUDEPATH += "../../../boost_1_64_0"
 
@@ -50,6 +50,7 @@ win32 {
 }
 
 SOURCES += audio/audiodevicemanager.cpp\
+        audio/audiocompressor.cpp\
         audio/audiofifo.cpp\
         audio/audiooutput.cpp\
         audio/audioinput.cpp\
@@ -68,24 +69,28 @@ SOURCES += audio/audiodevicemanager.cpp\
         dsp/ctcssdetector.cpp\
         dsp/cwkeyer.cpp\
         dsp/cwkeyersettings.cpp\
-        dsp/decimatorsf.cpp\
+        dsp/decimatorsfi.cpp\
         dsp/dspcommands.cpp\
         dsp/dspengine.cpp\
         dsp/dspdevicesourceengine.cpp\
         dsp/dspdevicesinkengine.cpp\
         dsp/fftengine.cpp\
         dsp/kissengine.cpp\
-        dsp/fftfilt.cxx\
+        dsp/fftcorr.cpp\
+        dsp/fftfilt.cpp\
         dsp/fftwindow.cpp\
         dsp/filterrc.cpp\
         dsp/filtermbe.cpp\
         dsp/filerecord.cpp\
+        dsp/freqlockcomplex.cpp\
         dsp/interpolator.cpp\
         dsp/hbfiltertraits.cpp\
         dsp/lowpass.cpp\
         dsp/nco.cpp\
         dsp/ncof.cpp\
         dsp/phaselock.cpp\
+        dsp/phaselockcomplex.cpp\
+        dsp/projector.cpp\
         dsp/recursivefilters.cpp\
         dsp/samplesinkfifo.cpp\
         dsp/samplesourcefifo.cpp\
@@ -120,6 +125,7 @@ SOURCES += audio/audiodevicemanager.cpp\
         mainparser.cpp
 
 HEADERS  += audio/audiodevicemanager.h\
+        audio/audiocompressor.h\
         audio/audiofifo.h\
         audio/audiooutput.h\
         audio/audioinput.h\
@@ -131,6 +137,7 @@ HEADERS  += audio/audiodevicemanager.h\
         device/devicesinkapi.h\
         device/deviceenumerator.h\
         dsp/afsquelch.h\
+        dsp/decimatorsfi.h\
         dsp/downchannelizer.h\
         dsp/upchannelizer.h\
         dsp/channelmarker.h\
@@ -138,13 +145,13 @@ HEADERS  += audio/audiodevicemanager.h\
         dsp/cwkeyersettings.h\
         dsp/complex.h\
         dsp/decimators.h\
-        dsp/decimatorsf.h\
         dsp/interpolators.h\
         dsp/dspcommands.h\
         dsp/dspengine.h\
         dsp/dspdevicesourceengine.h\
         dsp/dspdevicesinkengine.h\
         dsp/dsptypes.h\
+        dsp/fftcorr.h\
         dsp/fftengine.h\
         dsp/fftfilt.h\
         dsp/fftwengine.h\
@@ -152,6 +159,7 @@ HEADERS  += audio/audiodevicemanager.h\
         dsp/filterrc.h\
         dsp/filtermbe.h\
         dsp/filerecord.h\
+        dsp/freqlockcomplex.h\
         dsp/gfft.h\
         dsp/hbfiltertraits.h\
         dsp/iirfilter.h\
@@ -171,6 +179,8 @@ HEADERS  += audio/audiodevicemanager.h\
         dsp/ncof.h\
         dsp/phasediscri.h\
         dsp/phaselock.h\
+        dsp/phaselockcomplex.h\
+        dsp/projector.h\
         dsp/recursivefilters.h\
         dsp/samplesinkfifo.h\
         dsp/samplesourcefifo.h\
@@ -193,7 +203,6 @@ HEADERS  += audio/audiodevicemanager.h\
         settings/mainsettings.h\
         util/CRC64.h\
         util/db.h\
-        export.h\
         util/message.h\
         util/messagequeue.h\
         util/prettyprint.h\

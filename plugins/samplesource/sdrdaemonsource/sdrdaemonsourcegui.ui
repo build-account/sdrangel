@@ -18,7 +18,7 @@
   </property>
   <property name="font">
    <font>
-    <family>Sans Serif</family>
+    <family>Liberation Sans</family>
     <pointsize>9</pointsize>
    </font>
   </property>
@@ -132,7 +132,7 @@
        </property>
        <property name="font">
         <font>
-         <family>DejaVu Sans Mono</family>
+         <family>Liberation Mono</family>
          <pointsize>20</pointsize>
         </font>
        </property>
@@ -527,7 +527,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Number of uncrecoverable errors since event counts reset</string>
+        <string>Number of unrecoverable errors since event counts reset</string>
        </property>
        <property name="text">
         <string>000</string>
@@ -752,7 +752,7 @@
        </property>
        <property name="font">
         <font>
-         <family>DejaVu Sans Mono</family>
+         <family>Liberation Mono</family>
          <pointsize>12</pointsize>
          <italic>false</italic>
         </font>
@@ -870,7 +870,7 @@
        </property>
        <property name="font">
         <font>
-         <family>DejaVu Sans Mono</family>
+         <family>Liberation Mono</family>
          <pointsize>12</pointsize>
          <italic>false</italic>
         </font>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>758</width>
-    <height>120</height>
+    <height>121</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -18,6 +18,7 @@
   </property>
   <property name="font">
    <font>
+    <family>Liberation Sans</family>
     <pointsize>8</pointsize>
    </font>
   </property>
@@ -205,6 +206,62 @@
      </item>
      <item>
       <widget class="ButtonSwitch" name="polar">
+       <property name="maximumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>255</red>
+             <green>255</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>190</red>
+             <green>190</green>
+             <blue>190</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="toolTip">
+        <string>Display XY traces and polar trace</string>
+       </property>
+       <property name="text">
+        <string>XY</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ButtonSwitch" name="polarPoints">
        <property name="minimumSize">
         <size>
          <width>24</width>
@@ -212,7 +269,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Display XY traces and polar trace</string>
+        <string>Toggle points or segments display for polar trace</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -416,7 +473,7 @@
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>20</number>
+        <number>100</number>
        </property>
        <property name="pageStep">
         <number>1</number>
@@ -720,32 +777,7 @@ kS/s</string>
        </property>
        <item>
         <property name="text">
-         <string>Real</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Imag</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Mag</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>MagdB</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Phi</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>dPhi</string>
+         <string>TBD</string>
         </property>
        </item>
       </widget>
@@ -827,7 +859,7 @@ kS/s</string>
         <string>Vertical range</string>
        </property>
        <property name="maximum">
-        <number>10</number>
+        <number>26</number>
        </property>
        <property name="pageStep">
         <number>1</number>
@@ -1099,7 +1131,7 @@ kS/s</string>
         <string>Select trace memory (0 is live)</string>
        </property>
        <property name="maximum">
-        <number>15</number>
+        <number>49</number>
        </property>
        <property name="pageStep">
         <number>1</number>
@@ -1158,7 +1190,7 @@ kS/s</string>
         </size>
        </property>
        <property name="toolTip">
-        <string>Sellect triggger in trigger chain</string>
+        <string>Select trigger in trigger chain</string>
        </property>
        <property name="maximum">
         <number>0</number>
@@ -1370,32 +1402,7 @@ kS/s</string>
        </property>
        <item>
         <property name="text">
-         <string>Real</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Imag</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Mag</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>MagdB</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Phi</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>dPhi</string>
+         <string>TBD</string>
         </property>
        </item>
       </widget>
@@ -1496,7 +1503,7 @@ kS/s</string>
      <item>
       <widget class="QLabel" name="trigLevelLabel">
        <property name="toolTip">
-        <string>Triger level</string>
+        <string>Trigger level</string>
        </property>
        <property name="text">
         <string>L:</string>
@@ -1558,7 +1565,7 @@ kS/s</string>
           <string>Trigger level fine</string>
          </property>
          <property name="maximum">
-          <number>200</number>
+          <number>500</number>
          </property>
          <property name="pageStep">
           <number>1</number>

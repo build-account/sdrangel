@@ -20,12 +20,14 @@
 #include <QtPlugin>
 #include "plugin/pluginapi.h"
 
+#ifndef SERVER_MODE
 #include "udpsrcgui.h"
+#endif
 #include "udpsrc.h"
 
 const PluginDescriptor UDPSrcPlugin::m_pluginDescriptor = {
 	QString("UDP Channel Source"),
-	QString("3.12.0"),
+	QString("4.0.2"),
 	QString("(c) Edouard Griffiths, F4EXB"),
 	QString("https://github.com/f4exb/sdrangel"),
 	true,
@@ -51,10 +53,19 @@ void UDPSrcPlugin::initPlugin(PluginAPI* pluginAPI)
 	m_pluginAPI->registerRxChannel(UDPSrc::m_channelIdURI, UDPSrc::m_channelId, this);
 }
 
+#ifdef SERVER_MODE
+PluginInstanceGUI* UDPSrcPlugin::createRxChannelGUI(
+        DeviceUISet *deviceUISet __attribute__((unused)),
+        BasebandSampleSink *rxChannel __attribute__((unused)))
+{
+    return 0;
+}
+#else
 PluginInstanceGUI* UDPSrcPlugin::createRxChannelGUI(DeviceUISet *deviceUISet, BasebandSampleSink *rxChannel)
 {
 	return UDPSrcGUI::create(m_pluginAPI, deviceUISet, rxChannel);
 }
+#endif
 
 BasebandSampleSink* UDPSrcPlugin::createRxChannelBS(DeviceSourceAPI *deviceAPI)
 {

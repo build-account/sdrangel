@@ -24,7 +24,6 @@
 #include <QTime>
 #include <QDateTime>
 #include <QString>
-#include <QFileDialog>
 
 #ifdef _WIN32
 #include <nn.h>
@@ -55,7 +54,7 @@ SDRdaemonSourceGui::SDRdaemonSourceGui(DeviceUISet *deviceUISet, QWidget* parent
 	m_acquisition(false),
 	m_streamSampleRate(0),
 	m_streamCenterFrequency(0),
-	m_lastEngineState((DSPDeviceSourceEngine::State)-1),
+	m_lastEngineState(DSPDeviceSourceEngine::StNotStarted),
 	m_framesDecodingStatus(0),
 	m_bufferLengthInSecs(0.0),
     m_bufferGauge(-50),
@@ -91,12 +90,12 @@ SDRdaemonSourceGui::SDRdaemonSourceGui(DeviceUISet *deviceUISet, QWidget* parent
 
 	connect(&m_statusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
 	m_statusTimer.start(500);
-	connect(&(m_deviceUISet->m_deviceSourceAPI->getMasterTimer()), SIGNAL(timeout()), this, SLOT(tick()));
     connect(&m_updateTimer, SIGNAL(timeout()), this, SLOT(updateHardware()));
 
     m_sampleSource = (SDRdaemonSourceInput*) m_deviceUISet->m_deviceSourceAPI->getSampleSource();
 
 	connect(&m_inputMessageQueue, SIGNAL(messageEnqueued()), this, SLOT(handleInputMessages()), Qt::QueuedConnection);
+	m_sampleSource->setMessageQueueToGUI(&m_inputMessageQueue);
 
     m_eventsTime.start();
     displayEventCounts();
@@ -520,7 +519,7 @@ void SDRdaemonSourceGui::displayEventTimer()
     int elapsedTimeMillis = m_eventsTime.elapsed();
     QTime recordLength(0, 0, 0, 0);
     recordLength = recordLength.addSecs(elapsedTimeMillis/1000);
-    QString s_time = recordLength.toString("hh:mm:ss");
+    QString s_time = recordLength.toString("HH:mm:ss");
     ui->eventCountsTimeText->setText(s_time);
 }
 
@@ -533,7 +532,7 @@ void SDRdaemonSourceGui::updateWithStreamTime()
 	bool updateEventCounts = false;
     quint64 startingTimeStampMsec = ((quint64) m_startingTimeStamp.tv_sec * 1000LL) + ((quint64) m_startingTimeStamp.tv_usec / 1000LL);
     QDateTime dt = QDateTime::fromMSecsSinceEpoch(startingTimeStampMsec);
-    QString s_date = dt.toString("yyyy-MM-dd  hh:mm:ss.zzz");
+    QString s_date = dt.toString("yyyy-MM-dd  HH:mm:ss.zzz");
 	ui->absTimeText->setText(s_date);
 
 	if (m_framesDecodingStatus == 2)
@@ -631,12 +630,4 @@ void SDRdaemonSourceGui::updateStatus()
         ui->startStop->setChecked(false);
         ui->startStop->setEnabled(false);
     }
-}
-
-void SDRdaemonSourceGui::tick()
-{
-	if ((++m_tickCount & 0xf) == 0) {
-		SDRdaemonSourceInput::MsgConfigureSDRdaemonStreamTiming* message = SDRdaemonSourceInput::MsgConfigureSDRdaemonStreamTiming::create();
-		m_sampleSource->getInputMessageQueue()->push(message);
-	}
 }

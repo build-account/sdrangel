@@ -1,3 +1,123 @@
+sdrangel (4.0.5-1) unstable; urgency=medium
+
+  * Web API: handle pre-flight requests
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 22 Jul 2018 09:14:18 +0200
+  
+sdrangel (4.0.4-1) unstable; urgency=medium
+
+  * Fixed PlutoSDR output sample width. Fixes issue #198
+  * Web API: implemented CORS
+  * Fix preset group delete not removing presets from the preset window
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Wed, 18 Jul 2018 19:14:18 +0200
+  
+sdrangel (4.0.3-1) unstable; urgency=medium
+
+  * Spectrum: linear mode for spectrum
+  * Scope: fixed power display overlay
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 08 Jul 2018 15:14:18 +0200
+  
+sdrangel (4.0.2-1) unstable; urgency=medium
+
+  * Spectrum: added averaging
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 01 Jul 2018 21:14:18 +0200
+  
+sdrangel (4.0.1-1) unstable; urgency=medium
+
+  * DSD demod: added NXDN support
+  * DATV demod: include it only if FFmpeg > 3.1 is installed
+  * Fixes for Arch. Manual merge of pull request #183
+  * Scope: new magnitude squared projection mainly for radioastronomy
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sat, 23 Jun 2018 09:14:18 +0200
+  
+sdrangel (4.0.0-1) unstable; urgency=medium
+
+  * Finalization of REST API and server instance
+  * Removal of old ChannelAnalyzer and TCPSrc plugins
+  * Renamed Channel Analyzer NG to Channel Analyzer
+  * DATV demod: added missing AVUTIL cmake variables
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sat, 09 Jun 2018 20:14:18 +0200
+
+sdrangel (3.14.7-1) unstable; urgency=medium
+
+  * ChanelAnalyzerNG: added PLL option and source selection with auto correlation
+  * RTL-SDR: fixed inf/sup decimators
+  * AM demod: syncrhronous AM detection option
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 20 May 2018 20:14:18 +0200
+
+sdrangel (3.14.6-1) unstable; urgency=medium
+
+  * Fixed keyboard input for negative values on realtive integer value dials
+  * Get rid of ugly native dialogs
+  * Inf/Sup frequency shift scheme change to be closer to device center frequency
+  * PlutoSDR input: fixed Inf/Sup frequency shift calculation
+  * File record default file name with ISO datetime stamp
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Fri, 11 May 2018 20:14:18 +0200
+
+sdrangel (3.14.5-1) unstable; urgency=medium
+
+  * DSD demod: allow audio rates integer multiples of 8k other than 48k
+  * Added a benchmark program testing decimators
+  * Optimization of decimators using even/odd technique
+  * SSB mod: fixed channel unregistration
+  * AM demod: fixed delayed squelch
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 06 May 2018 20:14:18 +0200
+
+sdrangel (3.14.4-1) unstable; urgency=medium
+
+  * AM demod: squelch buffer to open at start of valid squelch
+  * NFM demod: same as AM with squelch noise tail cut
+  * SSB demod: squelch buffer to cut squelch noise tail
+  * DSD demod: squelch buffer to open at start of valid squelch not loosing any samples
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 22 Apr 2018 17:14:18 +0200
+
+sdrangel (3.14.3-1) unstable; urgency=medium
+
+  * LimeSDR: compiled with LimeSuite release 18.04.1
+  * LimeSDR: implemented transverter dialog (issue #157)
+  * UDP source and sink: make sure audio samples are always on 16 bits
+  * UDP source and sink: dialog elements for address and port
+  * Reviewed FFT destruction in many channel sources and sinks (issue #159) 
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Fri, 20 Apr 2018 20:14:18 +0200
+
+sdrangel (3.14.2-1) unstable; urgency=medium
+
+  * Web API: settings and report for all channel Tx plugins
+  * Server: AirspyHF, BladeRF and all channel Tx plugins support
+  * PVS-Studio static analysis corrections (4)
+  * NFM demod: fixed AF squelch and audio sample rate handling
+  * BFM demod: fixed segfault in RDS parser
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 15 Apr 2018 12:14:18 +0200
+
+sdrangel (3.14.1-1) unstable; urgency=medium
+
+  * NFM: fixed lowpass filter initialization (CTCSS)
+  * DSD demod: set FM deviation independent from RF bandwidth
+  * DSD demod: implemented DMR negative with DSDcc v1.7.5
+  * DSD demod: implemented dialog to view the log of status text messages
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Sun, 01 Apr 2018 12:14:18 +0200
+
+sdrangel (3.14.0-1) unstable; urgency=medium
+
+  * New audio devices management
+  * DATV demod: fixed message handling and thus screen initialization issue
+  * Removed UDP/RTP copy audio from channel sink plugins entirely
+  * Removed UDP address and port from Channel marker
+
+ -- Edouard Griffiths, F4EXB <f4exb06@gmail.com>  Fri, 30 Mar 2018 16:14:18 +0200
+
 sdrangel (3.13.1-1) unstable; urgency=medium
 
   * Web API: settings and report enry points for AM demod and AirspyHF

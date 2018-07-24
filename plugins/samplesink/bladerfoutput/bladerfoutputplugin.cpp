@@ -15,18 +15,22 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 #include <QtPlugin>
-#include <QAction>
 #include <libbladeRF.h>
 #include "plugin/pluginapi.h"
 #include "util/simpleserializer.h"
 #include <device/devicesourceapi.h>
 
 #include "bladerfoutputplugin.h"
+
+#ifdef SERVER_MODE
+#include "bladerfoutput.h"
+#else
 #include "bladerfoutputgui.h"
+#endif
 
 const PluginDescriptor BladerfOutputPlugin::m_pluginDescriptor = {
 	QString("BladeRF Output"),
-	QString("3.9.0"),
+	QString("3.14.5"),
 	QString("(c) Edouard Griffiths, F4EXB"),
 	QString("https://github.com/f4exb/sdrangel"),
 	true,
@@ -81,6 +85,15 @@ PluginInterface::SamplingDevices BladerfOutputPlugin::enumSampleSinks()
 	return result;
 }
 
+#ifdef SERVER_MODE
+PluginInstanceGUI* BladerfOutputPlugin::createSampleSinkPluginInstanceGUI(
+        const QString& sinkId __attribute__((unused)),
+        QWidget **widget __attribute__((unused)),
+        DeviceUISet *deviceUISet __attribute__((unused)))
+{
+    return 0;
+}
+#else
 PluginInstanceGUI* BladerfOutputPlugin::createSampleSinkPluginInstanceGUI(
         const QString& sinkId,
         QWidget **widget,
@@ -97,6 +110,7 @@ PluginInstanceGUI* BladerfOutputPlugin::createSampleSinkPluginInstanceGUI(
 		return 0;
 	}
 }
+#endif
 
 DeviceSampleSink* BladerfOutputPlugin::createSampleSinkPluginInstanceOutput(const QString& sinkId, DeviceSinkAPI *deviceAPI)
 {

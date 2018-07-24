@@ -19,8 +19,6 @@ NFMModSettings:
     volumeFactor:
       type: number
       format: float
-    audioSampleRate:
-      type: integer
     channelMute:
       type: integer
     playLoop:
@@ -33,6 +31,8 @@ NFMModSettings:
       type: integer
     title:
       type: string
+    audioDeviceName:
+      type: string      
     modAFInput:
       type: integer
     cwKeyer:
@@ -45,4 +45,8 @@ NFMModReport:
       description: power transmitted in channel (dB)
       type: number
       format: float
+    audioSampleRate:
+      type: integer
+    channelSampleRate:
+      type: integer
     

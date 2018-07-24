@@ -36,6 +36,16 @@ DSDDecoder::~DSDDecoder()
 {
 }
 
+void DSDDecoder::set48k(bool to48k)
+{
+    m_decoder.setUpsampling(to48k ? 6 : 0);
+}
+
+void DSDDecoder::setUpsampling(int upsampling)
+{
+    m_decoder.setUpsampling(upsampling);
+}
+
 void DSDDecoder::setBaudRate(int baudRate)
 {
     if (baudRate == 2400)

@@ -44,17 +44,18 @@ public:
         PayloadL16Stereo,
     } PayloadType;
 
-    RTPSink(QUdpSocket *udpSocket, bool stereo);
+    RTPSink(QUdpSocket *udpSocket, int sampleRate, bool stereo);
     ~RTPSink();
 
     bool isValid() const { return m_valid; }
-    void setPayloadType(PayloadType payloadType);
+    void setPayloadInformation(PayloadType payloadType, int sampleRate);
 
     void setDestination(const QString& address, uint16_t port);
     void deleteDestination(const QString& address, uint16_t port);
     void addDestination(const QString& address, uint16_t port);
 
     void write(const uint8_t *sampleByte);
+    void write(const uint8_t *sampleByteL, const uint8_t *sampleByteR);
     void write(const uint8_t *sampleByte, int nbSamples);
 
 protected:

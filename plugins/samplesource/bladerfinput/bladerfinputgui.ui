@@ -24,7 +24,7 @@
   </property>
   <property name="font">
    <font>
-    <family>Sans Serif</family>
+    <family>Liberation Sans</family>
     <pointsize>9</pointsize>
    </font>
   </property>
@@ -136,7 +136,7 @@
        </property>
        <property name="font">
         <font>
-         <family>DejaVu Sans Mono</family>
+         <family>Liberation Mono</family>
          <pointsize>20</pointsize>
         </font>
        </property>
@@ -331,7 +331,7 @@
        </property>
        <property name="font">
         <font>
-         <family>DejaVu Sans Mono</family>
+         <family>Liberation Mono</family>
          <pointsize>12</pointsize>
         </font>
        </property>
@@ -379,7 +379,7 @@
         <string>Decimation factor</string>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <item>
         <property name="text">
@@ -409,6 +409,11 @@
        <item>
         <property name="text">
          <string>32</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>64</string>
         </property>
        </item>
       </widget>

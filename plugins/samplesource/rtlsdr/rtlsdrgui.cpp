@@ -38,7 +38,7 @@ RTLSDRGui::RTLSDRGui(DeviceUISet *deviceUISet, QWidget* parent) :
 	m_forceSettings(true),
 	m_settings(),
 	m_sampleSource(0),
-	m_lastEngineState((DSPDeviceSourceEngine::State)-1)
+	m_lastEngineState(DSPDeviceSourceEngine::StNotStarted)
 {
     m_sampleSource = (RTLSDRInput*) m_deviceUISet->m_deviceSourceAPI->getSampleSource();
 
@@ -62,6 +62,7 @@ RTLSDRGui::RTLSDRGui(DeviceUISet *deviceUISet, QWidget* parent) :
 	displayGains();
 
 	connect(&m_inputMessageQueue, SIGNAL(messageEnqueued()), this, SLOT(handleInputMessages()), Qt::QueuedConnection);
+    m_sampleSource->setMessageQueueToGUI(&m_inputMessageQueue);
 }
 
 RTLSDRGui::~RTLSDRGui()
@@ -277,7 +278,7 @@ void RTLSDRGui::on_centerFrequency_changed(quint64 value)
 
 void RTLSDRGui::on_decim_currentIndexChanged(int index)
 {
-	if ((index <0) || (index > 5))
+	if ((index <0) || (index > 6))
 	{
 		return;
 	}

@@ -42,7 +42,10 @@
 class DeviceSourceAPI;
 class ThreadedBasebandSampleSink;
 class DownChannelizer;
-class AudioNetSink;
+
+namespace SWGSDRangel {
+    class SWGRDSReport;
+}
 
 class BFMDemod : public BasebandSampleSink, public ChannelSinkAPI {
 public:
@@ -152,8 +155,30 @@ public:
         m_magsqCount = 0;
     }
 
-    bool isAudioNetSinkRTPCapable() const { return false; }
     RDSParser& getRDSParser() { return m_rdsParser; }
+
+    virtual int webapiSettingsGet(
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+            bool force,
+            const QStringList& channelSettingsKeys,
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiReportGet(
+            SWGSDRangel::SWGChannelReport& response,
+            QString& errorMessage);
+
+    static int requiredBW(int rfBW)
+    {
+        if (rfBW <= 48000) {
+            return 48000;
+        } else {
+            return (3*rfBW)/2;
+        }
+    }
 
     static const QString m_channelIdURI;
     static const QString m_channelId;
@@ -171,6 +196,7 @@ private:
     int m_inputSampleRate;
     int m_inputFrequencyOffset;
     BFMDemodSettings m_settings;
+    quint32 m_audioSampleRate;
 
 	NCO m_nco;
 	Interpolator m_interpolator; //!< Interpolator between fixed demod bandwidth and audio bandwidth (rational)
@@ -222,12 +248,16 @@ private:
 	static const int default_excursion = 750000; // +/- 75 kHz
 
 	PhaseDiscriminators m_phaseDiscri;
-	AudioNetSink *m_audioNetSink;
 
     static const int m_udpBlockSize;
 
+	void applyAudioSampleRate(int sampleRate);
     void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = false);
 	void applySettings(const BFMDemodSettings& settings, bool force = false);
+
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const BFMDemodSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
+    void webapiFormatRDSReport(SWGSDRangel::SWGRDSReport *report);
 };
 
 #endif // INCLUDE_BFMDEMOD_H

@@ -34,13 +34,13 @@
 #include "audio/audiofifo.h"
 #include "util/message.h"
 #include "util/movingaverage.h"
+#include "util/doublebufferfifo.h"
 
 #include "nfmdemodsettings.h"
 
 class DeviceSourceAPI;
 class ThreadedBasebandSampleSink;
 class DownChannelizer;
-class AudioNetSink;
 
 class NFMDemod : public BasebandSampleSink, public ChannelSinkAPI {
 public:
@@ -163,8 +163,6 @@ public:
         m_magsqCount = 0;
     }
 
-    bool isAudioNetSinkRTPCapable() const;
-
     static const QString m_channelIdURI;
     static const QString m_channelId;
 
@@ -181,6 +179,8 @@ private:
     int m_inputSampleRate;
     int m_inputFrequencyOffset;
 	NFMDemodSettings m_settings;
+	uint32_t m_audioSampleRate;
+	float m_discriCompensation; //!< compensation factor that depends on audio rate (1 for 48 kS/s)
 	bool m_running;
 
 	NCO m_nco;
@@ -207,12 +207,11 @@ private:
 	MovingAverageUtil<Real, double, 32> m_movingAverage;
 	AFSquelch m_afSquelch;
 	Real m_agcLevel; // AGC will aim to  this level
+	DoubleBufferFIFO<Real> m_squelchDelayLine;
 
 	AudioVector m_audioBuffer;
 	uint m_audioBufferFill;
-
 	AudioFifo m_audioFifo;
-    AudioNetSink *m_audioNetSink;
 
 	QMutex m_settingsMutex;
 
@@ -223,6 +222,7 @@ private:
 //    void apply(bool force = false);
     void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = false);
     void applySettings(const NFMDemodSettings& settings, bool force = false);
+    void applyAudioSampleRate(int sampleRate);
     void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const NFMDemodSettings& settings);
     void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 };

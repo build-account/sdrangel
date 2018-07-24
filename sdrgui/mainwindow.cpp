@@ -27,6 +27,7 @@
 #include <QSysInfo>
 #include <QKeyEvent>
 #include <QResource>
+#include <QFontDatabase>
 
 #include <plugin/plugininstancegui.h>
 #include <plugin/plugininstancegui.h>
@@ -89,7 +90,7 @@ MainWindow::MainWindow(qtwebapp::LoggerWithFile *logger, const MainParser& parse
 	m_settings(),
     m_masterTabIndex(0),
 	m_dspEngine(DSPEngine::instance()),
-	m_lastEngineState((DSPDeviceSourceEngine::State)-1),
+	m_lastEngineState(DSPDeviceSourceEngine::StNotStarted),
 	m_inputGUI(0),
 	m_sampleRate(0),
 	m_centerFrequency(0),
@@ -100,6 +101,13 @@ MainWindow::MainWindow(qtwebapp::LoggerWithFile *logger, const MainParser& parse
 
     m_instance = this;
 	m_settings.setAudioDeviceManager(m_dspEngine->getAudioDeviceManager());
+
+    QFontDatabase::addApplicationFont(":/LiberationSans-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/LiberationMono-Regular.ttf");
+
+    QFont font("Liberation Sans");
+    font.setPointSize(9);
+    qApp->setFont(font);
 
 	ui->setupUi(this);
 	createStatusBar();
@@ -1252,7 +1260,7 @@ void MainWindow::on_presetExport_clicked()
 			const Preset* preset = qvariant_cast<const Preset*>(item->data(0, Qt::UserRole));
 			QString base64Str = preset->serialize().toBase64();
 			QString fileName = QFileDialog::getSaveFileName(this,
-			    tr("Open preset export file"), ".", tr("Preset export files (*.prex)"));
+			    tr("Open preset export file"), ".", tr("Preset export files (*.prex)"), 0, QFileDialog::DontUseNativeDialog);
 
 			if (fileName != "")
 			{
@@ -1296,7 +1304,7 @@ void MainWindow::on_presetImport_clicked()
 		}
 
 		QString fileName = QFileDialog::getOpenFileName(this,
-		    tr("Open preset export file"), ".", tr("Preset export files (*.prex)"));
+		    tr("Open preset export file"), ".", tr("Preset export files (*.prex)"), 0, QFileDialog::DontUseNativeDialog);
 
 		if (fileName != "")
 		{
@@ -1386,7 +1394,7 @@ void MainWindow::on_presetDelete_clicked()
             {
                 m_settings.deletePresetGroup(item->text(0));
 
-                ui->commandTree->clear();
+                ui->presetTree->clear();
 
                 for (int i = 0; i < m_settings.getPresetCount(); ++i) {
                     addPresetToTree(m_settings.getPreset(i));
@@ -1414,7 +1422,7 @@ void MainWindow::on_action_Loaded_Plugins_triggered()
 
 void MainWindow::on_action_Audio_triggered()
 {
-	AudioDialog audioDialog(m_dspEngine->getAudioDeviceManager(), this);
+	AudioDialogX audioDialog(m_dspEngine->getAudioDeviceManager(), this);
 	audioDialog.exec();
 }
 
@@ -1718,7 +1726,7 @@ void MainWindow::tabInputViewIndexChanged()
 
 void MainWindow::updateStatus()
 {
-    m_dateTimeWidget->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss t"));
+    m_dateTimeWidget->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss t"));
 }
 
 void MainWindow::setLoggingOptions()

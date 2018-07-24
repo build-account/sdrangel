@@ -4,7 +4,7 @@
 
 Starting with version 2 SDRangel supports running several sampling devices simultaneously. Each concurrent device is associated to a slot with a set of tabbed windows in the UI. These tabs are marked R0, R1, R2... 
 
-The slots are arranged in a stacked fashion so that when a new device is added with the Acquisition -> Add device set menu a new slot is allocated in the last position and when a devcie is removed with the Acquisition -> Remove last device set menu the slot in the last position is deleted. Slot 0 (R0) receiver slot is created at initialization and cannot be deleted with the menu. The letter "R" in the tab names indicates that the slot is for a receiver (source) device while "T" designates a tramsmitter (sink) device.
+The slots are arranged in a stacked fashion so that when a new device is added with the Acquisition -> Add device set menu a new slot is allocated in the last position and when a device is removed with the Acquisition -> Remove last device set menu the slot in the last position is deleted. Slot 0 (R0) receiver slot is created at initialization and cannot be deleted with the menu. The letter "R" in the tab names indicates that the slot is for a receiver (source) device while "T" designates a transmitter (sink) device.
 
 The tabbed windows are:
 
@@ -16,11 +16,11 @@ The tabbed windows are:
 
 The combination of a sampling device and its associated channels is called a "device set".
 
-![Main Window nulti device support](../doc/img/MainWindow_tabs.png)
+![Main Window multi device support](../doc/img/MainWindow_tabs.png)
 
 The sampling devices tab (1) acts as a master and when one of its tabs is selected all other tabs are selected accordingly i.e. all R0s, all R1s, etc... in tabs (2), (3), (4) and (5)
 
-In each slave tab group (2), (3), (4) and (5) an individual tab corresponding to one device can be selected without affecting the selection of the other tabs. This way you can sneak peek into another spectrum or channel goup without affecting the display of other tabbed windows.
+In each slave tab group (2), (3), (4) and (5) an individual tab corresponding to one device can be selected without affecting the selection of the other tabs. This way you can sneak peek into another spectrum or channel group without affecting the display of other tabbed windows.
 
 <h2>Interface details</h2>
 
@@ -49,28 +49,14 @@ The following items are presented hierarchically from left to right:
     - _Audio_: opens a dialog to choose the audio output device (see 1.1 below for details)
     - _Logging_: opens a dialog to choose logging options (see 1.2 below for details)
     - _DV Serial_: if you have one or more AMBE3000 serial devices for AMBE digital voice check to connect them. If unchecked DV decoding will resort to mbelib if available else no audio will be produced for AMBE digital voice
-    - _My Position_: opens a dialog to enter your station ("My Position") coordinates in decimal degrees with north latitudes positive and east longitudes positive. This is used whenever positional data is to be displayed (APRS, DPRS, ...). For it now only works with D-Star $$CRC frames. See [DSD demod plugin](../plugins/channel/demoddsd/readme.md) for details on how to decode Digital Voice modes.
+    - _My Position_: opens a dialog to enter your station ("My Position") coordinates in decimal degrees with north latitudes positive and east longitudes positive. This is used whenever positional data is to be displayed (APRS, DPRS, ...). For it now only works with D-Star $$CRC frames. See [DSD demod plugin](../plugins/channelrx/demoddsd/readme.md) for details on how to decode Digital Voice modes.
   - Help:
     - _Loaded Plugins_: shows details about the loaded plugins (see 1.3 below for details)
     - _About_: current version and blah blah.    
 
 <h4>1.1. Preferences - Audio</h4>
 
-Audio output preferences:
-
-![Main Window audio output preferences](../doc/img/MainWindow_PreferencesAudioOutput.png)
-
-In the "Audio Output" tab of the audio preferences dialog you can choose which device is used for audio output. This choice is global for the application and is persistent. If the device is not available anymore at a later stage it reverts to the default devuce (first row).
-
-Audio input preferences:
-
-![Main Window audio output preferences](../doc/img/MainWindow_PreferencesAudioInput.png)
-
-In the "Audio Input" tab of the dialog you can choose the device used for audio input in a similar way as you do for the output device.
-
-In addition you can adjust the global volume using the dial knob at the bottom. Audio input behaves slightly differently than audio output and when the audio engine is started the volume is forced to a value that by default is maximum (1.0). This is not always desirable and using this control you can set it at a lower level (0.00 to 1.00 in 0.01 steps). 
-
-Eventually select "OK" to confirm the settings or "Cancel" to dismiss without change.
+See the audio management documentation [here](audio.md).
 
 <h4>1.2. Logging preferences</h4>
 
@@ -84,7 +70,7 @@ Log message will appear as follows:
 (1)                     (2) (3)
 ```
 
-  - 1: Timestamp in `dd.MM.yyyy hh:mm:ss.zzz` format
+  - 1: Timestamp in `yyyy-MM-dd HH:mm:ss.zzz` format
   - 2: Message level: `(D)`: debug, `(I)`: info, `(W)`: warning, `(C)`: critical, `(F)`: fatal
   - 3: Message text
 
@@ -185,7 +171,7 @@ This is the sampling rate in kS/s of the I/Q stream extracted from the device af
 
 <h4>2.4. Center frequency</h4>
 
-This is the current center frequency in kHz with dot separated thousands (MHz, GHz). On devices for which frequency can be directly controlled (i.e. all except File Source and SDRdaemon) you can use the thumbwheels to set the frequency. Thumwheels move with the mouse wheel when hovering over a digit. 
+This is the current center frequency in kHz with dot separated thousands (MHz, GHz). On devices for which frequency can be directly controlled (i.e. all except File Source and SDRdaemon) you can use the thumbwheels to set the frequency. Thumbwheels move with the mouse wheel when hovering over a digit. 
 
 When left clicking on a digit a cursor is set on it and you can also use the arrows to move the corresponding thumbwheel.
 
@@ -228,7 +214,7 @@ Use the `Cancel` button to exit the dialog without any change
 
 <h4>3.3. Reload currently selected device</h4>
 
-This button activates a close/open sequence to recycle the device. It may be useful when the device is not streaming anymore or in an attempt to clear possible errors. Make sure the streaming is stopeed first.
+This button activates a close/open sequence to recycle the device. It may be useful when the device is not streaming anymore or in an attempt to clear possible errors. Make sure the streaming is stopped first.
 
 <h4>3.4. Channel selector</h4>
 
@@ -240,11 +226,112 @@ Use this push button to add a new channel with the selected plugin
 
 <h3>4. Spectrum display control</h3>
 
-These are the controls of the main spectrum display in (7). Please refer to the spectrum display documentation (TBD) for details.
+![Spectrum GUI](../doc/img/MainWindow_spectrum_gui.png)
+
+These are the controls of the main spectrum display in (7). The same controls are found in the plugins that feature a spectrum display:
+  - Channel Analyzer
+  - Broadcast FM demodulator
+  - SSB demodulator
+  - UDP source
+  - UDP sink
+
+<h4>4.1. FFT window selector</h4>
+
+Use this combo box to select which window is applied to the FFT:
+  - **Bart**: Bartlett
+  - **B-H**: Blackmann-Harris
+  - **FT**: Flat top
+  - **Ham**: Hamming (default)
+  - **Han**: Hanning
+  - **Rec**: Rectangular (no window)
+  
+<h4>4.2. FFT size</h4>
+
+Select the size of the FFT window among these values:
+  - 128
+  - 256
+  - 512
+  - 1k = 1024 (default)
+  - 2k = 2048
+  - 4k = 4096
+
+<h4>4.3. Reference level</h4>
+
+This is the level in dB at the top of the display range. You can select values between 0 and -110 in 5 dB steps
+
+<h4>4.4. Range</h4>
+
+This is the range of display in dB. You can select values between 5 and 100 in 5 dB steps
+
+<h4>4.5. Averaging mode</h4>
+
+Use this combo to select which averaging mode is applied:
+  - **No**: no averaging. Disables averaging regardless of the number of averaged samples (4.6). This is the default option
+  - **Mov**: moving average. This is a sliding average over the amount of samples specified next (4.6). There is one complete FFT line produced at every FFT sampling period
+  - **Fix**: fixed average. Average is done over the amount of samples specified next (4.6) and a result is produced at the end of the corresponding period then the next block of averaged samples is processed. There is one complete FFT line produced every FFT sampling period multiplied by the number of averaged samples (4.6). The time scale on the waterfall display is updated accordingly.
+
+<h4>4.6. Number of averaged samples</h4>
+  
+Each FFT bin (squared magnitude) is averaged over a number of samples. This combo allows selecting the number of samples between these values: 0 (no averaging), 2, 5, 10, 20, 50, 100, 200, 500, 1k (1000). The tooltip mentions the resulting averaging period considering the baseband sample rate and FFT size.
+Averaging reduces the noise variance and can be used to better detect weak continuous signals. The fixed averaging mode allows long time monitoring on the waterfall.
+
+<h4>4.7. Phosphor display stroke decay</h4>
+
+This controls the decay rate of the stroke when phosphor display is engaged (4.C)
+
+<h4>4.8. Phosphor display holdoff</h4>
+
+This controls the holdoff when phosphor display is engaged (4.C)
+
+<h4>4.9. Phosphor display stroke strength</h4>
+
+This controls the stroke strength when phosphor display is engaged (4.C)
+
+<h4>4.A. Trace intensity</h4>
+
+This controls the intensity of the maximum (4.D) and current (4.E) spectrum trace
+
+<h4>4.B. Clear spectrum</h4>
+
+This resets the maximum spectrum trace and phosphor remanence
+
+<h4>4.C. Phosphor display</h4>
+
+Toggles the phosphor display on the spectrum
+
+<h4>4.D. Maximum trace</h4>
+
+Toggles the maximum trace display (red trace) on the spectrum
+
+<h4>4.E. Current trace</h4>
+
+Toggles the current trace display (yellow trace) on the spectrum
+
+<h4>4.F. Waterfall/spectrum placement</h4>
+
+Toggles the spectrum on top or on bottom versus waterfall
+
+<h4>4.G. Waterfall</h4>
+
+Toggles the waterfall display
+
+<h4>4.H.Grid</h4>
+
+Toggles the grid display
+
+<h4>4.I.Grid intensity</h4>
+
+Controls the intensity of the grid display
+
+<h4>4.J. Logarithmic/linear scale</h4>
+
+Use this toggle button to switch between spectrum logarithmic and linear scale display. The face of the button will change to represent either a logaritmic or linear curve.
+
+When in linear mode the range control (4.4) has no effect because the actual range is between 0 and the reference level. The reference level in dB (4.3) still applies but is translated to a linear value e.g -40 dB is 1e-4. In linear mode the scale numbers are formatted using scientific notation so that they always occupy the same space.
 
 <h3>5. Presets and commands</h3>
 
-The presets and commands tree view are by default stacked in tabbs. The following sections describe the presets section 5A) and commands (section 5B) views successively 
+The presets and commands tree view are by default stacked in tabs. The following sections describe the presets section 5A) and commands (section 5B) views successively 
 
 <h3>5A. Presets</h3>
 
@@ -323,7 +410,7 @@ This is a tree view of the saved commands. Commands describe the path to an exec
 
 Typically an "executable file" is a script (Python, shell, whatever...) or can be a compiled program (c, c++, java, whatever...) that interacts with SDRangel using its web REST API. When called from within SDRangel they can act as "macros" allowing to perform actions automatically.
 
-Of course any binary that resides in your system can be used that way like `/bin/ls` or `/bin/date` although these two are of anedoctical interest...
+Of course any binary that resides in your system can be used that way like `/bin/ls` or `/bin/date` although these two are of anecdotal interest...
 
 ![Main Window presets view](../doc/img/MainWindow_commands_view.png)
 
@@ -387,10 +474,10 @@ You can edit the description using this text box. The description will appear in
 
 <h6>5B.6.3.3. Executable file selection </h6>
 
-Clicking on this button wil open a file dialog to select the executable file that will be run with this command. The file selection dialog has predefined file pattern selections:
+Clicking on this button will open a file dialog to select the executable file that will be run with this command. The file selection dialog has predefined file pattern selections:
 
   - `*` for All files
-  - `*.py` for Pyhon files
+  - `*.py` for Python files
   - `*.sh` or `*.bat` for shell or batch files
   - `*.bin` or `*.exe` for binary files
 
@@ -434,7 +521,7 @@ Use the "Cancel" button to cancel the changes.
 
 <h5>5B.6.4. Run command or groups of commands</h5>
 
-This will run the currently selected command. If the selection is a group it will run all commands of the group starting them in the displayed order. Please note that commands are run in independant processes and therefore all launched commands in the group will run concurrently.
+This will run the currently selected command. If the selection is a group it will run all commands of the group starting them in the displayed order. Please note that commands are run in independent processes and therefore all launched commands in the group will run concurrently.
 
 <h5>5B.6.5. View last command run details</h5>
 
@@ -444,9 +531,9 @@ This dialog will show the results of the last run including the output (merged s
 
 <h6>5B.6.5.1. Process status</h6>
 
-When the process is not running the stop icon (&#9632;) is displayed. The backgroumd color indicate different states:
+When the process is not running the stop icon (&#9632;) is displayed. The background color indicate different states:
 
-  - no color (same as backround): the process has never run during this session
+  - no color (same as background): the process has never run during this session
   - red: the process ended with error
   - green: the process ended successfully. This does not mean that there was no programmatic error.
   
@@ -470,7 +557,7 @@ This is the process PID. It is 0 if the process has never run during this sessio
 
 <h6>5B.6.5.6. Process kill</h6>
 
-Use this button to kill (send SIGKILL) the running process. It has no effect if the process is not runing.
+Use this button to kill (send SIGKILL) the running process. It has no effect if the process is not running.
 
 <h6>5B.6.5.7. Command line</h6>
 
@@ -506,7 +593,7 @@ By pushing the "Close" button the process output window is closed.
 
 <h5>5B.6.6. Save commands</h5>
 
-This will save the commands immediately. The commands will be automatically saved when the applicaiton exits normally.
+This will save the commands immediately. The commands will be automatically saved when the application exits normally.
 
 <h5>5B.6.7. Delete commands or group of commands</h5>
 
@@ -518,9 +605,9 @@ Use this button to activate the keyboard binding. This requires that the focus i
 
 <h3>6. Channels</h3>
 
-This area shows the control GUIs of the channels curently active for the device. When the preset is saved (as default at exit time or as a saved preset) the GUIs are ordered by increasing frequency. If presets share the same frequenccy they are ordered by their internal ID name. Thus new channel GUIs will appear ordered only when reloaded.
+This area shows the control GUIs of the channels currently active for the device. When the preset is saved (as default at exit time or as a saved preset) the GUIs are ordered by increasing frequency. If presets share the same frequency they are ordered by their internal ID name. Thus new channel GUIs will appear ordered only when reloaded.
 
-Details about the GUIs can be found in the channel plugins documentation which consits of a readme.md file in each of the channel plugins folder (done partially).
+Details about the GUIs can be found in the channel plugins documentation which consists of a readme.md file in each of the channel plugins folder (done partially).
 
 With these channels: AM demod, BFM demod, DSD demod, NFM demod, UDP source, UDP sink some common basic settings can be set with a popup dialog. This dialog is opened by clicking on the small grey square on the top left of the channel window. The settings are as follows:
 
@@ -543,92 +630,11 @@ When the mouse is over the channel window or over the central line in the spectr
   - AdSnd: UDP address and send port
   - AdRcv: UDP address and receive port
   
-<h4>6.4,5,6: UDP address (4) receive port (5) and send port (6)</h4>
-
-Some channels can exchange data over UDP. Depending on the channel the data is the following:
-
-<table>
-  <tr>
-    <th>Channel</th>
-    <th>Data sent</th>
-    <th>Type</th>
-    <th>Data received</th>
-    <th>Type</th>
-    <th>Address</th>
-  </tr>
-  <tr>
-    <td>AM demod</td>
-    <td>Audio</td>
-    <td>Mono</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>
-  <tr>
-    <td>BFM demod</td>
-    <td>Audio</td>
-    <td>Stereo</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>  
-  <tr>
-    <td>DSD demod</td>
-    <td>Audio</td>
-    <td>Stereo</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>  
-  <tr>
-    <td>NFM demod</td>
-    <td>Audio</td>
-    <td>Mono</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>
-  <tr>
-    <td>SSB demod</td>
-    <td>Audio</td>
-    <td>Mono</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>
-  <tr>
-    <td>WFM demod</td>
-    <td>Audio</td>
-    <td>Mono</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Remote</td>
-  </tr>
-  <tr>
-    <td>UDP source</td>
-    <td>Audio, I/Q</td>
-    <td>Mono, Stereo</td>
-    <td>Audio</td>
-    <td>Mono</td>
-    <td>Remote</td>
-  </tr>
-  <tr>
-    <td>UDP sink</td>
-    <td>N/A</td>
-    <td>N/A</td>
-    <td>Audio, I/Q</td>
-    <td>Mono, Stereo</td>
-    <td>Local</td>
-  </tr>
-</table>
-  
-Data type is S16LE 1 channel (Mono) or 2 channels (Stereo or I/Q)
-
-<h4>6.7: Validate and exit dialog</h4>
+<h4>6.4: Validate and exit dialog</h4>
 
 Validates the data (saves it in the channel marker object) and exits the dialog
 
-<h4>6.8: Cancel changes and exit dialog</h4>
+<h4>6.5: Cancel changes and exit dialog</h4>
 
 Do not make any changes and exit dialog
 
@@ -636,7 +642,7 @@ Do not make any changes and exit dialog
 
 This shows the spectrum in the passband returned from the sampling device possibly after decimation. The actual sample rate is shown in the device control at the left of the frequency display (2.3)
 
-The spectrum display is cotrolled by the display control (4).
+The spectrum display is controlled by the display control (4).
  
 <h3>8. Status</h3>
 

@@ -4,10 +4,11 @@
 #include "util/message.h"
 
 #include <QDebug>
+#include <QDateTime>
 
 FileRecord::FileRecord() :
 	BasebandSampleSink(),
-    m_fileName(std::string("test.sdriq")),
+    m_fileName("test.sdriq"),
     m_sampleRate(0),
     m_centerFrequency(0),
 	m_recordOn(false),
@@ -17,9 +18,9 @@ FileRecord::FileRecord() :
 	setObjectName("FileSink");
 }
 
-FileRecord::FileRecord(const std::string& filename) :
+FileRecord::FileRecord(const QString& filename) :
     BasebandSampleSink(),
-    m_fileName(std::string(filename)),
+    m_fileName(filename),
     m_sampleRate(0),
     m_centerFrequency(0),
     m_recordOn(false),
@@ -34,12 +35,17 @@ FileRecord::~FileRecord()
     stopRecording();
 }
 
-void FileRecord::setFileName(const std::string& filename)
+void FileRecord::setFileName(const QString& filename)
 {
     if (!m_recordOn)
     {
         m_fileName = filename;
     }
+}
+
+void FileRecord::genUniqueFileName(uint deviceUID)
+{
+    setFileName(QString("rec%1_%2.sdriq").arg(deviceUID).arg(QDateTime::currentDateTimeUtc().toString("yyyy-MM-ddTHH_mm_ss_zzz")));
 }
 
 void FileRecord::feed(const SampleVector::const_iterator& begin, const SampleVector::const_iterator& end, bool positiveOnly __attribute__((unused)))
@@ -75,7 +81,7 @@ void FileRecord::startRecording()
     if (!m_sampleFile.is_open())
     {
     	qDebug() << "FileRecord::startRecording";
-        m_sampleFile.open(m_fileName.c_str(), std::ios::binary);
+        m_sampleFile.open(m_fileName.toStdString().c_str(), std::ios::binary);
         m_recordOn = true;
         m_recordStart = true;
         m_byteCount = 0;
@@ -110,7 +116,7 @@ bool FileRecord::handleMessage(const Message& message)
     }
 }
 
-void FileRecord::handleConfigure(const std::string& fileName)
+void FileRecord::handleConfigure(const QString& fileName)
 {
     if (fileName != m_fileName)
     {

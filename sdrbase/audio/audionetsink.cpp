@@ -23,14 +23,25 @@
 
 const int AudioNetSink::m_udpBlockSize = 512;
 
-AudioNetSink::AudioNetSink(QObject *parent, bool stereo) :
+AudioNetSink::AudioNetSink(QObject *parent) :
     m_type(SinkUDP),
     m_rtpBufferAudio(0),
     m_bufferIndex(0),
     m_port(9998)
 {
+    memset(m_data, 0, 65536);
     m_udpSocket = new QUdpSocket(parent);
-    m_rtpBufferAudio = new RTPSink(m_udpSocket, stereo);
+}
+
+AudioNetSink::AudioNetSink(QObject *parent, int sampleRate, bool stereo) :
+    m_type(SinkUDP),
+    m_rtpBufferAudio(0),
+    m_bufferIndex(0),
+    m_port(9998)
+{
+    memset(m_data, 0, 65536);
+    m_udpSocket = new QUdpSocket(parent);
+    m_rtpBufferAudio = new RTPSink(m_udpSocket, sampleRate, stereo);
 }
 
 AudioNetSink::~AudioNetSink()
@@ -44,7 +55,7 @@ AudioNetSink::~AudioNetSink()
 
 bool AudioNetSink::isRTPCapable() const
 {
-        return m_rtpBufferAudio->isValid();
+    return m_rtpBufferAudio && m_rtpBufferAudio->isValid();
 }
 
 bool AudioNetSink::selectType(SinkType type)
@@ -52,17 +63,13 @@ bool AudioNetSink::selectType(SinkType type)
     if (type == SinkUDP)
     {
         m_type = SinkUDP;
-        return true;
     }
-    else if (type == SinkRTP)
+    else // this is SinkRTP
     {
         m_type = SinkRTP;
-        return true;
     }
-    else
-    {
-        return false;
-    }
+
+    return true;
 }
 
 void AudioNetSink::setDestination(const QString& address, uint16_t port)
@@ -89,9 +96,11 @@ void AudioNetSink::deleteDestination(const QString& address, uint16_t port)
     }
 }
 
-void AudioNetSink::setStereo(bool stereo)
+void AudioNetSink::setParameters(bool stereo, int sampleRate)
 {
-    m_rtpBufferAudio->setPayloadType(stereo ? RTPSink::PayloadL16Stereo : RTPSink::PayloadL16Stereo);
+    if (m_rtpBufferAudio) {
+        m_rtpBufferAudio->setPayloadInformation(stereo ? RTPSink::PayloadL16Stereo : RTPSink::PayloadL16Mono, sampleRate);
+    }
 }
 
 void AudioNetSink::write(qint16 sample)
@@ -113,6 +122,31 @@ void AudioNetSink::write(qint16 sample)
     else if (m_type == SinkRTP)
     {
         m_rtpBufferAudio->write((uint8_t *) &sample);
+    }
+}
+
+void AudioNetSink::write(qint16 lSample, qint16 rSample)
+{
+    if (m_type == SinkUDP)
+    {
+        if (m_bufferIndex >= m_udpBlockSize)
+        {
+            m_udpSocket->writeDatagram((const char*)m_data, (qint64 ) m_udpBlockSize, m_address, m_port);
+            m_bufferIndex = 0;
+        }
+        else
+        {
+            qint16 *p = (qint16*) &m_data[m_bufferIndex];
+            *p = lSample;
+            m_bufferIndex += sizeof(qint16);
+            p = (qint16*) &m_data[m_bufferIndex];
+            *p = rSample;
+            m_bufferIndex += sizeof(qint16);
+        }
+    }
+    else if (m_type == SinkRTP)
+    {
+        m_rtpBufferAudio->write((uint8_t *) &lSample, (uint8_t *) &rSample);
     }
 }
 

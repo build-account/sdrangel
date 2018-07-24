@@ -53,6 +53,9 @@ RTPUDPTransmitter::RTPUDPTransmitter() :
     m_rtcpPort = 0;
     m_rtpPort = 0;
     m_receivemode = RTPTransmitter::AcceptAll;
+    m_maxpacksize = 0;
+    memset(m_rtpBuffer, 0, m_absoluteMaxPackSize);
+    memset(m_rtcpBuffer, 0, m_absoluteMaxPackSize);
 }
 
 RTPUDPTransmitter::~RTPUDPTransmitter()
@@ -538,14 +541,10 @@ bool RTPUDPTransmitter::ShouldAcceptData(const RTPAddress& rtpAddress)
         std::list<RTPAddress>::iterator findIt = std::find(m_acceptList.begin(), m_acceptList.end(), rtpAddress);
         return findIt != m_acceptList.end();
     }
-    else if (m_receivemode == RTPTransmitter::IgnoreSome)
+    else // this is RTPTransmitter::IgnoreSome
     {
         std::list<RTPAddress>::iterator findIt = std::find(m_ignoreList.begin(), m_ignoreList.end(), rtpAddress);
         return findIt == m_ignoreList.end();
-    }
-    else
-    {
-        return false;
     }
 }
 

@@ -19,7 +19,6 @@
 #include <QTime>
 #include <QDateTime>
 #include <QString>
-#include <QFileDialog>
 #include <QMessageBox>
 
 #include <boost/algorithm/string.hpp>
@@ -51,7 +50,7 @@ SDRdaemonSinkGui::SDRdaemonSinkGui(DeviceUISet *deviceUISet, QWidget* parent) :
 	m_samplesCount(0),
 	m_tickCount(0),
 	m_nbSinceLastFlowCheck(0),
-	m_lastEngineState((DSPDeviceSinkEngine::State)-1),
+	m_lastEngineState(DSPDeviceSinkEngine::StNotStarted),
 	m_doApplySettings(true),
 	m_forceSettings(true)
 {
@@ -545,7 +544,7 @@ void SDRdaemonSinkGui::displayEventTimer()
     int elapsedTimeMillis = m_time.elapsed();
     QTime recordLength(0, 0, 0, 0);
     recordLength = recordLength.addSecs(elapsedTimeMillis/1000);
-    QString s_time = recordLength.toString("hh:mm:ss");
+    QString s_time = recordLength.toString("HH:mm:ss");
     ui->eventCountsTimeText->setText(s_time);
 }
 
@@ -562,7 +561,7 @@ void SDRdaemonSinkGui::updateWithStreamTime()
 	QTime t(0, 0, 0, 0);
 	t = t.addSecs(t_sec);
 	t = t.addMSecs(t_msec);
-	QString s_timems = t.toString("hh:mm:ss.zzz");
+	QString s_timems = t.toString("HH:mm:ss.zzz");
 	//ui->relTimeText->setText(s_timems); TODO with absolute time
 }
 

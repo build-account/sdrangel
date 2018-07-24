@@ -16,24 +16,16 @@ AMDemodSettings:
     volume:
       type: number
       format: float
-    audioSampleRate:
-      type: integer
     audioMute:
       type: integer
     bandpassEnable:
       description: use bandpass filter (1 for yes, 0 for no)
       type: integer
-    copyAudioToUDP:
-      type: integer
-    copyAudioUseRTP:
-      type: integer
-    udpAddress:
-      type: string
-    udpPort:
-      type: integer
     rgbColor:
       type: integer
     title:
+      type: string
+    audioDeviceName:
       type: string
 
 AMDemodReport:
@@ -46,3 +38,8 @@ AMDemodReport:
     squelch:
       description: squelch status (1 if open else 0)
       type: integer
+    audioSampleRate:
+      type: integer
+    channelSampleRate:
+      type: integer
+      

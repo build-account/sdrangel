@@ -38,7 +38,7 @@ BladerfInputGui::BladerfInputGui(DeviceUISet *deviceUISet, QWidget* parent) :
 	m_settings(),
 	m_sampleSource(NULL),
 	m_sampleRate(0),
-	m_lastEngineState((DSPDeviceSourceEngine::State)-1)
+	m_lastEngineState(DSPDeviceSourceEngine::StNotStarted)
 {
     m_sampleSource = (BladerfInput*) m_deviceUISet->m_deviceSourceAPI->getSampleSource();
 
@@ -63,6 +63,7 @@ BladerfInputGui::BladerfInputGui(DeviceUISet *deviceUISet, QWidget* parent) :
 	displaySettings();
 
 	connect(&m_inputMessageQueue, SIGNAL(messageEnqueued()), this, SLOT(handleInputMessages()), Qt::QueuedConnection);
+    m_sampleSource->setMessageQueueToGUI(&m_inputMessageQueue);
 
 	sendSettings();
 }
@@ -254,7 +255,7 @@ void BladerfInputGui::on_bandwidth_currentIndexChanged(int index)
 
 void BladerfInputGui::on_decim_currentIndexChanged(int index)
 {
-	if ((index <0) || (index > 5))
+	if ((index <0) || (index > 6))
 		return;
 	m_settings.m_log2Decim = index;
 	sendSettings();

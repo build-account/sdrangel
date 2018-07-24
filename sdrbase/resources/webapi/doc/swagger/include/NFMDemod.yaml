@@ -33,19 +33,11 @@ NFMDemodSettings:
       type: integer
     ctcssIndex:
       type: integer
-    audioSampleRate:
-      type: integer
-    copyAudioToUDP:
-      type: integer
-    copyAudioUseRTP:
-      type: integer
-    udpAddress:
-      type: string
-    udpPort:
-      type: integer
     rgbColor:
       type: integer
     title:
+      type: string
+    audioDeviceName:
       type: string
     
 NFMDemodReport:
@@ -62,3 +54,8 @@ NFMDemodReport:
     squelch:
       description: squelch status (1 if open else 0)
       type: integer
+    audioSampleRate:
+      type: integer
+    channelSampleRate:
+      type: integer
+      

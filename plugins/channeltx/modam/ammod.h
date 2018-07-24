@@ -89,15 +89,6 @@ public:
         { }
     };
 
-    typedef enum
-    {
-        AMModInputNone,
-        AMModInputTone,
-        AMModInputFile,
-        AMModInputAudio,
-        AMModInputCWTone
-    } AMModInputAF;
-
     class MsgConfigureFileSourceName : public Message
     {
         MESSAGE_CLASS_DECLARATION
@@ -154,27 +145,6 @@ public:
 
         MsgConfigureFileSourceStreamTiming() :
             Message()
-        { }
-    };
-
-    class MsgConfigureAFInput : public Message
-    {
-        MESSAGE_CLASS_DECLARATION
-
-    public:
-        AMModInputAF getAFInput() const { return m_afInput; }
-
-        static MsgConfigureAFInput* create(AMModInputAF afInput)
-        {
-            return new MsgConfigureAFInput(afInput);
-        }
-
-    private:
-        AMModInputAF m_afInput;
-
-        MsgConfigureAFInput(AMModInputAF afInput) :
-            Message(),
-            m_afInput(afInput)
         { }
     };
 
@@ -245,6 +215,20 @@ public:
     virtual QByteArray serialize() const;
     virtual bool deserialize(const QByteArray& data);
 
+    virtual int webapiSettingsGet(
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+                bool force,
+                const QStringList& channelSettingsKeys,
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage);
+
+    virtual int webapiReportGet(
+                SWGSDRangel::SWGChannelReport& response,
+                QString& errorMessage);
+
     double getMagSq() const { return m_magsq; }
 
     CWKeyer *getCWKeyer() { return &m_cwKeyer; }
@@ -276,6 +260,7 @@ private:
     int m_outputSampleRate;
     int m_inputFrequencyOffset;
     AMModSettings m_settings;
+    quint32 m_audioSampleRate;
 
     NCO m_carrierNco;
     NCOF m_toneNco;
@@ -301,7 +286,6 @@ private:
     quint32 m_recordLength; //!< record length in seconds computed from file size
     int m_sampleRate;
 
-    AMModInputAF m_afInput;
     quint32 m_levelCalcCount;
     Real m_peakLevel;
     Real m_levelSum;
@@ -309,6 +293,7 @@ private:
 
     static const int m_levelNbSamples;
 
+    void applyAudioSampleRate(int sampleRate);
     void applyChannelSettings(int basebandSampleRate, int outputSampleRate, int inputFrequencyOffset, bool force = false);
     void applySettings(const AMModSettings& settings, bool force = false);
     void pullAF(Real& sample);
@@ -316,6 +301,8 @@ private:
     void modulateSample();
     void openFileStream();
     void seekFileStream(int seekPercentage);
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const AMModSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 };
 
 

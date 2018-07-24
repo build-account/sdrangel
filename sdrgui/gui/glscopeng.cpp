@@ -42,7 +42,8 @@ GLScopeNG::GLScopeNG(QWidget* parent) :
     m_timeOffset(0),
     m_focusedTraceIndex(0),
     m_displayGridIntensity(10),
-    m_displayTraceIntensity(50)
+    m_displayTraceIntensity(50),
+    m_displayXYPoints(false)
 {
     setAttribute(Qt::WA_OpaquePaintEvent);
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(tick()));
@@ -910,7 +911,11 @@ void GLScopeNG::paintGL()
                 mat.setToIdentity();
                 mat.translate(-1.0f + 2.0f * rectX, 1.0f - 2.0f * rectY);
                 mat.scale(2.0f * rectW, -2.0f * rectH);
-                m_glShaderSimple.drawPolyline(mat, color, q3, end -start);
+                if (m_displayXYPoints) {
+                    m_glShaderSimple.drawPoints(mat, color, q3, end -start);
+                } else {
+                    m_glShaderSimple.drawPolyline(mat, color, q3, end -start);
+                }
             } // XY polar display
         } // trace length > 0
     } // XY mixed + polar display
@@ -1861,32 +1866,41 @@ void GLScopeNG::setPolarDisplays()
 void GLScopeNG::setYScale(ScaleEngine& scale, uint32_t highlightedTraceIndex)
 {
     ScopeVisNG::TraceData& traceData = (*m_tracesData)[highlightedTraceIndex];
-    float amp_range = 2.0 / traceData.m_amp;
-    float amp_ofs = traceData.m_ofs;
-    float pow_floor = -100.0 + traceData.m_ofs * 100.0;
-    float pow_range = 100.0 / traceData.m_amp;
+    double amp_range = 2.0 / traceData.m_amp;
+    double amp_ofs = traceData.m_ofs;
+    double pow_floor = -100.0 + traceData.m_ofs * 100.0;
+    double pow_range = 100.0 / traceData.m_amp;
 
     switch (traceData.m_projectionType)
     {
-    case ScopeVisNG::ProjectionMagDB: // dB scale
+    case Projector::ProjectionMagDB: // dB scale
         scale.setRange(Unit::Decibel, pow_floor, pow_floor + pow_range);
         break;
-    case ScopeVisNG::ProjectionMagLin:
-        if (amp_range < 2.0) {
-            scale.setRange(Unit::None, amp_ofs * 1000.0, amp_range * 1000.0 + amp_ofs * 1000.0);
+    case Projector::ProjectionMagLin:
+    case Projector::ProjectionMagSq:
+        if (amp_range < 1e-6) {
+            scale.setRange(Unit::None, amp_ofs * 1e9, amp_range * 1e9 + amp_ofs * 1e9);
+        } else if (amp_range < 1e-3) {
+            scale.setRange(Unit::None, amp_ofs * 1e6, amp_range * 1e6 + amp_ofs * 1e6);
+        } else if (amp_range < 1.0) {
+            scale.setRange(Unit::None, amp_ofs * 1e3, amp_range * 1e3 + amp_ofs * 1e3);
         } else {
             scale.setRange(Unit::None, amp_ofs, amp_range + amp_ofs);
         }
         break;
-    case ScopeVisNG::ProjectionPhase: // Phase or frequency
-    case ScopeVisNG::ProjectionDPhase:
+    case Projector::ProjectionPhase: // Phase or frequency
+    case Projector::ProjectionDPhase:
         scale.setRange(Unit::None, -1.0/traceData.m_amp + amp_ofs, 1.0/traceData.m_amp + amp_ofs);
         break;
-    case ScopeVisNG::ProjectionReal: // Linear generic
-    case ScopeVisNG::ProjectionImag:
+    case Projector::ProjectionReal: // Linear generic
+    case Projector::ProjectionImag:
     default:
-        if (amp_range < 2.0) {
-            scale.setRange(Unit::None, - amp_range * 500.0 + amp_ofs * 1000.0, amp_range * 500.0 + amp_ofs * 1000.0);
+        if (amp_range < 1e-6) {
+            scale.setRange(Unit::None, - amp_range * 5e8 + amp_ofs * 1e9, amp_range * 5e8 + amp_ofs * 1e9);
+        } else if (amp_range < 1e-3) {
+            scale.setRange(Unit::None, - amp_range * 5e5 + amp_ofs * 1e6, amp_range * 5e5 + amp_ofs * 1e6);
+        } else if (amp_range < 1.0) {
+            scale.setRange(Unit::None, - amp_range * 5e2 + amp_ofs * 1e3, amp_range * 5e2 + amp_ofs * 1e3);
         } else {
             scale.setRange(Unit::None, - amp_range * 0.5 + amp_ofs, amp_range * 0.5 + amp_ofs);
         }
@@ -1905,17 +1919,18 @@ void GLScopeNG::drawChannelOverlay(
     }
 
     QFontMetricsF metrics(m_channelOverlayFont);
-    QRectF rect = metrics.boundingRect(text);
-    channelOverlayPixmap = QPixmap(rect.width() + 4.0f, rect.height());
+    QRectF textRect = metrics.boundingRect(text);
+    QRectF overlayRect(0, 0, textRect.width()*1.05f + 4.0f, textRect.height());
+    channelOverlayPixmap = QPixmap(overlayRect.width(), overlayRect.height());
     channelOverlayPixmap.fill(Qt::transparent);
     QPainter painter(&channelOverlayPixmap);
     painter.setRenderHints(QPainter::Antialiasing|QPainter::TextAntialiasing, false);
-    painter.fillRect(rect, QColor(0, 0, 0, 0x80));
+    painter.fillRect(overlayRect, QColor(0, 0, 0, 0x80));
     QColor textColor(color);
     textColor.setAlpha(0xC0);
     painter.setPen(textColor);
     painter.setFont(m_channelOverlayFont);
-    painter.drawText(QPointF(0, rect.height() - 2.0f), text);
+    painter.drawText(QPointF(2.0f, overlayRect.height() - 4.0f), text);
     painter.end();
 
     m_glShaderPowerOverlay.initTexture(channelOverlayPixmap.toImage());
@@ -1934,11 +1949,12 @@ void GLScopeNG::drawChannelOverlay(
                 0, 0
         };
 
-        float shiftX = glScopeRect.width() - ((rect.width() + 4.0f) / width());
+        float shiftX = glScopeRect.width() - ((overlayRect.width() + 4.0f) / width());
+        float shiftY = 4.0f / height();
         float rectX = glScopeRect.x() + shiftX;
-        float rectY = glScopeRect.y();
-        float rectW = rect.width() / (float) width();
-        float rectH = rect.height() / (float) height();
+        float rectY = glScopeRect.y() + shiftY;
+        float rectW = overlayRect.width() / (float) width();
+        float rectH = overlayRect.height() / (float) height();
 
         QMatrix4x4 mat;
         mat.setToIdentity();

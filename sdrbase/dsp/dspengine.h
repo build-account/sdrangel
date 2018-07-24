@@ -18,11 +18,11 @@
 #ifndef INCLUDE_DSPENGINE_H
 #define INCLUDE_DSPENGINE_H
 
-#include <audio/audiodevicemanager.h>
 #include <QObject>
 #include <QTimer>
-
 #include <vector>
+
+#include "audio/audiodevicemanager.h"
 #include "audio/audiooutput.h"
 #include "audio/audioinput.h"
 #include "export.h"
@@ -41,7 +41,7 @@ public:
 
 	static DSPEngine *instance();
 
-	uint getAudioSampleRate() const { return m_audioOutputSampleRate; }
+	unsigned int getDefaultAudioSampleRate() const { return AudioDeviceManager::m_defaultAudioSampleRate; }
 
 	DSPDeviceSourceEngine *addDeviceSourceEngine();
 	void removeLastDeviceSourceEngine();
@@ -68,6 +68,7 @@ public:
 	        int mbeVolumeIndex,
 	        unsigned char channels,
 	        bool useHP,
+	        int upsampling,
 	        AudioFifo *audioFifo);
 
     const QTimer& getMasterTimer() const { return m_masterTimer; }
@@ -78,10 +79,6 @@ private:
 	std::vector<DSPDeviceSinkEngine*> m_deviceSinkEngines;
 	uint m_deviceSinkEnginesUIDSequence;
     AudioDeviceManager m_audioDeviceManager;
-	AudioOutput m_audioOutput;
-	AudioInput m_audioInput;
-	uint m_audioOutputSampleRate;
-    uint m_audioInputSampleRate;
     int m_audioInputDeviceIndex;
     int m_audioOutputDeviceIndex;
     QTimer m_masterTimer;

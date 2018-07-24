@@ -39,7 +39,7 @@ public:
 	MagAGC(int historySize, double R, double threshold);
 	virtual ~MagAGC();
 	void setSquared(bool squared) { m_squared = squared; }
-	void resize(int historySize, Real R);
+	void resize(int historySize, int stepLength, Real R);
 	void setOrder(double R);
 	virtual void feed(Complex& ci);
     double feedAndGetValue(const Complex& ci);
@@ -50,6 +50,10 @@ public:
     void setStepDownDelay(int stepDownDelay) { m_stepDownDelay = stepDownDelay; }
     void setClamping(bool clamping) { m_clamping = clamping; }
     void setClampMax(double clampMax) { m_clampMax = clampMax; }
+    int getStepDownDelay() const { return m_stepDownDelay; }
+    float getStepDownValue() const;
+    float getStepValue() const;
+
 private:
     bool m_squared;        //!< use squared magnitude (power) to compute AGC value
 	double m_magsq;        //!< current squared magnitude (power)
@@ -84,6 +88,13 @@ public:
         m_clip = clip;
         m_moving_average.resize(AvgSize, initial);
 	}
+
+    void resizeNew(uint32_t newSize, Real initial, Real cutoff=0, Real clip=0)
+    {
+        m_cutoff = cutoff;
+        m_clip = clip;
+        m_moving_average.resize(newSize, initial);
+    }
 
     void fill(double value)
     {

@@ -31,8 +31,7 @@ UDPSrcSettings::UDPSrcSettings() :
 void UDPSrcSettings::resetToDefaults()
 {
     m_outputSampleRate = 48000;
-    m_sampleFormat = FormatIQ;
-    m_sampleSize = Size16bits;
+    m_sampleFormat = FormatIQ16;
     m_inputFrequencyOffset = 0;
     m_rfBandwidth = 12500;
     m_fmDeviation = 2500;
@@ -46,8 +45,8 @@ void UDPSrcSettings::resetToDefaults()
     m_audioStereo = false;
     m_volume = 20;
     m_udpAddress = "127.0.0.1";
-    m_udpPort = 9999;
-    m_audioPort = 9998;
+    m_udpPort = 9998;
+    m_audioPort = 9997;
     m_rgbColor = QColor(225, 25, 99).rgb();
     m_title = "UDP Sample Source";
 }
@@ -78,7 +77,9 @@ QByteArray UDPSrcSettings::serialize() const
     s.writeS32(17, m_squelchGate);
     s.writeBool(18, m_agc);
     s.writeString(19, m_title);
-    s.writeS32(20, (int) m_sampleFormat);
+    s.writeString(20, m_udpAddress);
+    s.writeU32(21, m_udpPort);
+    s.writeU32(22, m_audioPort);
 
     return s.final();
 
@@ -99,6 +100,7 @@ bool UDPSrcSettings::deserialize(const QByteArray& data)
         QByteArray bytetmp;
         QString strtmp;
         int32_t s32tmp;
+        quint32 u32tmp;
 
         if (m_channelMarker) {
             d.readBlob(6, &bytetmp);
@@ -108,12 +110,12 @@ bool UDPSrcSettings::deserialize(const QByteArray& data)
         d.readS32(2, &s32tmp, 0);
         m_inputFrequencyOffset = s32tmp;
 
-        d.readS32(3, &s32tmp, FormatIQ);
+        d.readS32(3, &s32tmp, FormatIQ16);
 
         if ((s32tmp >= 0) && (s32tmp < (int) FormatNone)) {
             m_sampleFormat = (SampleFormat) s32tmp;
         } else {
-            m_sampleFormat = FormatIQ;
+            m_sampleFormat = FormatIQ16;
         }
 
         d.readReal(4, &m_outputSampleRate, 48000.0);
@@ -135,13 +137,22 @@ bool UDPSrcSettings::deserialize(const QByteArray& data)
         d.readS32(17, &m_squelchGate, 5);
         d.readBool(18, &m_agc, false);
         d.readString(19, &m_title, "UDP Sample Source");
+        d.readString(20, &m_udpAddress, "127.0.0.1");
 
-        d.readS32(20, &s32tmp, Size16bits);
+        d.readU32(21, &u32tmp, 9998);
 
-        if ((s32tmp >= 0) && (s32tmp < (int) SizeNone)) {
-            m_sampleSize = (SampleSize) s32tmp;
+        if ((u32tmp > 1024) & (u32tmp < 65538)) {
+            m_udpPort = u32tmp;
         } else {
-            m_sampleSize = Size16bits;
+            m_udpPort = 9998;
+        }
+
+        d.readU32(22, &u32tmp, 9997);
+
+        if ((u32tmp > 1024) & (u32tmp < 65538)) {
+            m_audioPort = u32tmp;
+        } else {
+            m_audioPort = 9997;
         }
 
         return true;

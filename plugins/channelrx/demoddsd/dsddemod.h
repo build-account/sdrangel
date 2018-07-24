@@ -34,6 +34,7 @@
 #include "audio/audiofifo.h"
 #include "util/message.h"
 #include "util/udpsink.h"
+#include "util/doublebufferfifo.h"
 
 #include "dsddemodsettings.h"
 #include "dsddecoder.h"
@@ -125,12 +126,36 @@ public:
         m_magsqCount = 0;
     }
 
-    bool isAudioNetSinkRTPCapable() const { return false; }
+    const char *updateAndGetStatusText();
+
+    virtual int webapiSettingsGet(
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+            bool force,
+            const QStringList& channelSettingsKeys,
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiReportGet(
+            SWGSDRangel::SWGChannelReport& response,
+            QString& errorMessage);
 
     static const QString m_channelIdURI;
     static const QString m_channelId;
 
 private:
+    typedef enum
+    {
+        signalFormatNone,
+        signalFormatDMR,
+        signalFormatDStar,
+        signalFormatDPMR,
+        signalFormatYSF,
+        signalFormatNXDN
+    } SignalFormat; //!< Used for status text formatting
+
 	class MsgConfigureMyPosition : public Message {
 		MESSAGE_CLASS_DECLARATION
 
@@ -165,6 +190,7 @@ private:
     int m_inputSampleRate;
 	int m_inputFrequencyOffset;
 	DSDDemodSettings m_settings;
+    quint32 m_audioSampleRate;
 
 	NCO m_nco;
 	Interpolator m_interpolator;
@@ -173,9 +199,9 @@ private:
 	int m_sampleCount;
 	int m_squelchCount;
 	int m_squelchGate;
-
 	double m_squelchLevel;
 	bool m_squelchOpen;
+    DoubleBufferFIFO<Real> m_squelchDelayLine;
 
     MovingAverageUtil<Real, double, 16> m_movingAverage;
     double m_magsq;
@@ -196,16 +222,22 @@ private:
 	bool m_scopeEnabled;
 
 	DSDDecoder m_dsdDecoder;
-	QMutex m_settingsMutex;
 
+	char m_formatStatusText[82+1]; //!< Fixed signal format dependent status text
+    SignalFormat m_signalFormat;   //!< Used to keep formatting during successive calls for the same standard type
     PhaseDiscriminators m_phaseDiscri;
-    //UDPSink<AudioSample> *m_udpBufferAudio;
-    AudioNetSink *m_audioNetSink;
+
+    QMutex m_settingsMutex;
 
     static const int m_udpBlockSize;
 
+    void applyAudioSampleRate(int sampleRate);
     void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = false);
 	void applySettings(const DSDDemodSettings& settings, bool force = false);
+	void formatStatusText();
+
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const DSDDemodSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 };
 
 #endif // INCLUDE_DSDDEMOD_H

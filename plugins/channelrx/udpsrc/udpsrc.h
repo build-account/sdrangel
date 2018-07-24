@@ -114,6 +114,20 @@ public:
     virtual QByteArray serialize() const;
     virtual bool deserialize(const QByteArray& data);
 
+    virtual int webapiSettingsGet(
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+            bool force,
+            const QStringList& channelSettingsKeys,
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiReportGet(
+            SWGSDRangel::SWGChannelReport& response,
+            QString& errorMessage);
+
     static const QString m_channelIdURI;
     static const QString m_channelId;
 	static const int udpBlockSize = 512; // UDP block size in number of bytes
@@ -186,7 +200,6 @@ protected:
 	UDPSink<Sample16> *m_udpBuffer16;
 	UDPSink<int16_t> *m_udpBufferMono16;
     UDPSink<Sample24> *m_udpBuffer24;
-    UDPSink<int32_t> *m_udpBufferMono24;
 
 	AudioVector m_audioBuffer;
 	uint m_audioBufferFill;
@@ -218,6 +231,9 @@ protected:
 
     void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = true);
     void applySettings(const UDPSrcSettings& settings, bool force = false);
+
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const UDPSrcSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 
     inline void calculateSquelch(double value)
     {
@@ -281,18 +297,22 @@ protected:
     {
         if (SDR_RX_SAMP_SZ == 16)
         {
-            if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
+            if (m_settings.m_sampleFormat == UDPSrcSettings::FormatIQ16) {
                 m_udpBuffer16->write(Sample16(real, imag));
-            } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
+            } else if (m_settings.m_sampleFormat == UDPSrcSettings::FormatIQ24) {
                 m_udpBuffer24->write(Sample24(real<<8, imag<<8));
+            } else {
+                m_udpBuffer16->write(Sample16(real, imag));
             }
         }
         else if (SDR_RX_SAMP_SZ == 24)
         {
-            if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
+            if (m_settings.m_sampleFormat == UDPSrcSettings::FormatIQ16) {
                 m_udpBuffer16->write(Sample16(real>>8, imag>>8));
-            } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
+            } else if (m_settings.m_sampleFormat == UDPSrcSettings::FormatIQ24) {
                 m_udpBuffer24->write(Sample24(real, imag));
+            } else {
+                m_udpBuffer16->write(Sample16(real>>8, imag>>8));
             }
         }
     }
@@ -301,38 +321,22 @@ protected:
     {
         if (SDR_RX_SAMP_SZ == 16)
         {
-            if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
-                m_udpBufferMono16->write(sample);
-            } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
-                m_udpBufferMono24->write(sample<<8);
-            }
+            m_udpBufferMono16->write(sample);
         }
         else if (SDR_RX_SAMP_SZ == 24)
         {
-            if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
-                m_udpBufferMono16->write(sample>>8);
-            } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
-                m_udpBufferMono24->write(sample);
-            }
+            m_udpBufferMono16->write(sample>>8);
         }
     }
 
     void udpWriteNorm(Real real, Real imag)
     {
-        if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
-            m_udpBuffer16->write(Sample16(real*32768.0, imag*32768.0));
-        } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
-            m_udpBuffer24->write(Sample24(real*8388608.0, imag*8388608.0));
-        }
+        m_udpBuffer16->write(Sample16(real*32768.0, imag*32768.0));
     }
 
     void udpWriteNormMono(Real sample)
     {
-        if (m_settings.m_sampleSize == UDPSrcSettings::Size16bits) {
-            m_udpBufferMono16->write(sample*32768.0);
-        } else if (m_settings.m_sampleSize == UDPSrcSettings::Size24bits) {
-            m_udpBufferMono24->write(sample*8388608.0);
-        }
+        m_udpBufferMono16->write(sample*32768.0);
     }
 
 };

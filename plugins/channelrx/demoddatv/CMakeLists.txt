@@ -25,6 +25,7 @@ include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
 	${AVCODEC_INCLUDE_DIRS}
 	${AVFORMAT_INCLUDE_DIRS}
+	${AVUTIL_INCLUDE_DIRS}
 	${SWSCALE_INCLUDE_DIRS}
 )
 
@@ -52,6 +53,7 @@ target_link_libraries(demoddatv
 	${SWSCALE_LIBRARIES}
 )
 
-qt5_use_modules(demoddatv Core Widgets Multimedia MultimediaWidgets)
+find_package(Qt5MultimediaWidgets 5.0 REQUIRED)
+target_link_libraries(demoddatv Qt5::Core Qt5::Widgets Qt5::Multimedia Qt5::MultimediaWidgets)
 
 install(TARGETS demoddatv DESTINATION lib/plugins/channelrx)

@@ -29,6 +29,7 @@
 #include "dsp/agc.h"
 #include "audio/audiofifo.h"
 #include "util/message.h"
+#include "util/doublebufferfifo.h"
 
 #include "ssbdemodsettings.h"
 
@@ -38,7 +39,6 @@
 class DeviceSourceAPI;
 class ThreadedBasebandSampleSink;
 class DownChannelizer;
-class AudioNetSink;
 
 class SSBDemod : public BasebandSampleSink, public ChannelSinkAPI {
 public:
@@ -120,6 +120,7 @@ public:
     virtual QByteArray serialize() const;
     virtual bool deserialize(const QByteArray& data);
 
+    uint32_t getAudioSampleRate() const { return m_audioSampleRate; }
     double getMagSq() const { return m_magsq; }
 	bool getAudioActive() const { return m_audioActive; }
 
@@ -134,7 +135,19 @@ public:
         m_magsqCount = 0;
     }
 
-    bool isAudioNetSinkRTPCapable() const;
+    virtual int webapiSettingsGet(
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+            bool force,
+            const QStringList& channelSettingsKeys,
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiReportGet(
+            SWGSDRangel::SWGChannelReport& response,
+            QString& errorMessage);
 
     static const QString m_channelIdURI;
     static const QString m_channelId;
@@ -261,6 +274,7 @@ private:
     int m_agcNbSamples;         //!< number of audio (48 kHz) samples for AGC averaging
     double m_agcPowerThreshold; //!< AGC power threshold (linear)
     int m_agcThresholdGate;     //!< Gate length in number of samples befor threshold triggers
+    DoubleBufferFIFO<fftfilt::cmplx> m_squelchDelayLine;
     bool m_audioActive;         //!< True if an audio signal is produced (no AGC or AGC and above threshold)
 
 	NCOF m_nco;
@@ -277,13 +291,14 @@ private:
 	uint m_audioBufferFill;
 	AudioFifo m_audioFifo;
 	quint32 m_audioSampleRate;
-    AudioNetSink *m_audioNetSink;
-	static const int m_udpBlockSize;
 
 	QMutex m_settingsMutex;
 
 	void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = false);
 	void applySettings(const SSBDemodSettings& settings, bool force = false);
+    void applyAudioSampleRate(int sampleRate);
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const SSBDemodSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 };
 
 #endif // INCLUDE_SSBDEMOD_H

@@ -19,7 +19,6 @@
 #include <QTime>
 #include <QDateTime>
 #include <QString>
-#include <QFileDialog>
 #include <QMessageBox>
 
 #include "ui_testsourcegui.h"
@@ -45,7 +44,7 @@ TestSourceGui::TestSourceGui(DeviceUISet *deviceUISet, QWidget* parent) :
     m_forceSettings(true),
     m_sampleSource(0),
     m_tickCount(0),
-    m_lastEngineState((DSPDeviceSourceEngine::State)-1)
+    m_lastEngineState(DSPDeviceSourceEngine::StNotStarted)
 {
     qDebug("TestSourceGui::TestSourceGui");
     m_sampleSource = m_deviceUISet->m_deviceSourceAPI->getSampleSource();
@@ -66,6 +65,7 @@ TestSourceGui::TestSourceGui(DeviceUISet *deviceUISet, QWidget* parent) :
     m_statusTimer.start(500);
 
     connect(&m_inputMessageQueue, SIGNAL(messageEnqueued()), this, SLOT(handleInputMessages()), Qt::QueuedConnection);
+    m_sampleSource->setMessageQueueToGUI(&m_inputMessageQueue);
 }
 
 TestSourceGui::~TestSourceGui()

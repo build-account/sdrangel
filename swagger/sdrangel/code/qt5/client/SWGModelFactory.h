@@ -1,6 +1,6 @@
 /**
  * SDRangel
- * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Stopping instance i.e. /sdrangel with DELETE method is a server only feature. It allows stopping the instance nicely.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV demodulator, Channel Analyzer, Channel Analyzer NG, LoRa demodulator, TCP source   * The content type returned is always application/json except in the following cases:     * An incorrect URL was specified: this document is returned as text/html with a status 400    --- 
+ * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV and DATV demodulators, Channel Analyzer NG, LoRa demodulator   * The device settings and report structures contains only the sub-structure corresponding to the device type. The DeviceSettings and DeviceReport structures documented here shows all of them but only one will be or should be present at a time   * The channel settings and report structures contains only the sub-structure corresponding to the channel type. The ChannelSettings and ChannelReport structures documented here shows all of them but only one will be or should be present at a time    --- 
  *
  * OpenAPI spec version: 4.0.0
  * Contact: f4exb06@gmail.com
@@ -16,31 +16,54 @@
 
 #include "SWGAMDemodReport.h"
 #include "SWGAMDemodSettings.h"
+#include "SWGAMModReport.h"
+#include "SWGAMModSettings.h"
+#include "SWGATVModReport.h"
+#include "SWGATVModSettings.h"
+#include "SWGAirspyHFReport.h"
 #include "SWGAirspyHFSettings.h"
-#include "SWGAudioDevice.h"
+#include "SWGAirspyReport.h"
+#include "SWGAirspySettings.h"
 #include "SWGAudioDevices.h"
-#include "SWGAudioDevicesSelect.h"
+#include "SWGAudioInputDevice.h"
+#include "SWGAudioOutputDevice.h"
+#include "SWGBFMDemodReport.h"
+#include "SWGBFMDemodSettings.h"
+#include "SWGBandwidth.h"
+#include "SWGBladeRFInputSettings.h"
+#include "SWGBladeRFOutputSettings.h"
 #include "SWGCWKeyerSettings.h"
 #include "SWGChannel.h"
 #include "SWGChannelListItem.h"
 #include "SWGChannelReport.h"
 #include "SWGChannelSettings.h"
 #include "SWGChannelsDetail.h"
+#include "SWGDSDDemodReport.h"
+#include "SWGDSDDemodSettings.h"
 #include "SWGDVSeralDevices.h"
 #include "SWGDVSerialDevice.h"
 #include "SWGDeviceListItem.h"
+#include "SWGDeviceReport.h"
 #include "SWGDeviceSet.h"
 #include "SWGDeviceSetList.h"
 #include "SWGDeviceSettings.h"
 #include "SWGDeviceState.h"
 #include "SWGErrorResponse.h"
+#include "SWGFCDProPlusSettings.h"
+#include "SWGFCDProSettings.h"
+#include "SWGFileSourceReport.h"
 #include "SWGFileSourceSettings.h"
+#include "SWGFrequency.h"
+#include "SWGFrequencyBand.h"
+#include "SWGGain.h"
 #include "SWGHackRFInputSettings.h"
 #include "SWGHackRFOutputSettings.h"
 #include "SWGInstanceChannelsResponse.h"
 #include "SWGInstanceDevicesResponse.h"
 #include "SWGInstanceSummaryResponse.h"
+#include "SWGLimeSdrInputReport.h"
 #include "SWGLimeSdrInputSettings.h"
+#include "SWGLimeSdrOutputReport.h"
 #include "SWGLimeSdrOutputSettings.h"
 #include "SWGLocationInformation.h"
 #include "SWGLoggingInfo.h"
@@ -48,6 +71,12 @@
 #include "SWGNFMDemodSettings.h"
 #include "SWGNFMModReport.h"
 #include "SWGNFMModSettings.h"
+#include "SWGPerseusReport.h"
+#include "SWGPerseusSettings.h"
+#include "SWGPlutoSdrInputReport.h"
+#include "SWGPlutoSdrInputSettings.h"
+#include "SWGPlutoSdrOutputReport.h"
+#include "SWGPlutoSdrOutputSettings.h"
 #include "SWGPresetExport.h"
 #include "SWGPresetGroup.h"
 #include "SWGPresetIdentifier.h"
@@ -55,9 +84,32 @@
 #include "SWGPresetItem.h"
 #include "SWGPresetTransfer.h"
 #include "SWGPresets.h"
+#include "SWGRDSReport.h"
+#include "SWGRDSReport_altFrequencies.h"
+#include "SWGRtlSdrReport.h"
 #include "SWGRtlSdrSettings.h"
+#include "SWGSDRPlayReport.h"
+#include "SWGSDRPlaySettings.h"
+#include "SWGSDRdaemonSinkReport.h"
+#include "SWGSDRdaemonSinkSettings.h"
+#include "SWGSDRdaemonSourceReport.h"
+#include "SWGSDRdaemonSourceSettings.h"
+#include "SWGSSBDemodReport.h"
+#include "SWGSSBDemodSettings.h"
+#include "SWGSSBModReport.h"
+#include "SWGSSBModSettings.h"
+#include "SWGSampleRate.h"
 #include "SWGSamplingDevice.h"
 #include "SWGSuccessResponse.h"
+#include "SWGTestSourceSettings.h"
+#include "SWGUDPSinkReport.h"
+#include "SWGUDPSinkSettings.h"
+#include "SWGUDPSrcReport.h"
+#include "SWGUDPSrcSettings.h"
+#include "SWGWFMDemodReport.h"
+#include "SWGWFMDemodSettings.h"
+#include "SWGWFMModReport.h"
+#include "SWGWFMModSettings.h"
 
 namespace SWGSDRangel {
 
@@ -68,17 +120,53 @@ namespace SWGSDRangel {
     if(QString("SWGAMDemodSettings").compare(type) == 0) {
       return new SWGAMDemodSettings();
     }
+    if(QString("SWGAMModReport").compare(type) == 0) {
+      return new SWGAMModReport();
+    }
+    if(QString("SWGAMModSettings").compare(type) == 0) {
+      return new SWGAMModSettings();
+    }
+    if(QString("SWGATVModReport").compare(type) == 0) {
+      return new SWGATVModReport();
+    }
+    if(QString("SWGATVModSettings").compare(type) == 0) {
+      return new SWGATVModSettings();
+    }
+    if(QString("SWGAirspyHFReport").compare(type) == 0) {
+      return new SWGAirspyHFReport();
+    }
     if(QString("SWGAirspyHFSettings").compare(type) == 0) {
       return new SWGAirspyHFSettings();
     }
-    if(QString("SWGAudioDevice").compare(type) == 0) {
-      return new SWGAudioDevice();
+    if(QString("SWGAirspyReport").compare(type) == 0) {
+      return new SWGAirspyReport();
+    }
+    if(QString("SWGAirspySettings").compare(type) == 0) {
+      return new SWGAirspySettings();
     }
     if(QString("SWGAudioDevices").compare(type) == 0) {
       return new SWGAudioDevices();
     }
-    if(QString("SWGAudioDevicesSelect").compare(type) == 0) {
-      return new SWGAudioDevicesSelect();
+    if(QString("SWGAudioInputDevice").compare(type) == 0) {
+      return new SWGAudioInputDevice();
+    }
+    if(QString("SWGAudioOutputDevice").compare(type) == 0) {
+      return new SWGAudioOutputDevice();
+    }
+    if(QString("SWGBFMDemodReport").compare(type) == 0) {
+      return new SWGBFMDemodReport();
+    }
+    if(QString("SWGBFMDemodSettings").compare(type) == 0) {
+      return new SWGBFMDemodSettings();
+    }
+    if(QString("SWGBandwidth").compare(type) == 0) {
+      return new SWGBandwidth();
+    }
+    if(QString("SWGBladeRFInputSettings").compare(type) == 0) {
+      return new SWGBladeRFInputSettings();
+    }
+    if(QString("SWGBladeRFOutputSettings").compare(type) == 0) {
+      return new SWGBladeRFOutputSettings();
     }
     if(QString("SWGCWKeyerSettings").compare(type) == 0) {
       return new SWGCWKeyerSettings();
@@ -98,6 +186,12 @@ namespace SWGSDRangel {
     if(QString("SWGChannelsDetail").compare(type) == 0) {
       return new SWGChannelsDetail();
     }
+    if(QString("SWGDSDDemodReport").compare(type) == 0) {
+      return new SWGDSDDemodReport();
+    }
+    if(QString("SWGDSDDemodSettings").compare(type) == 0) {
+      return new SWGDSDDemodSettings();
+    }
     if(QString("SWGDVSeralDevices").compare(type) == 0) {
       return new SWGDVSeralDevices();
     }
@@ -106,6 +200,9 @@ namespace SWGSDRangel {
     }
     if(QString("SWGDeviceListItem").compare(type) == 0) {
       return new SWGDeviceListItem();
+    }
+    if(QString("SWGDeviceReport").compare(type) == 0) {
+      return new SWGDeviceReport();
     }
     if(QString("SWGDeviceSet").compare(type) == 0) {
       return new SWGDeviceSet();
@@ -122,8 +219,26 @@ namespace SWGSDRangel {
     if(QString("SWGErrorResponse").compare(type) == 0) {
       return new SWGErrorResponse();
     }
+    if(QString("SWGFCDProPlusSettings").compare(type) == 0) {
+      return new SWGFCDProPlusSettings();
+    }
+    if(QString("SWGFCDProSettings").compare(type) == 0) {
+      return new SWGFCDProSettings();
+    }
+    if(QString("SWGFileSourceReport").compare(type) == 0) {
+      return new SWGFileSourceReport();
+    }
     if(QString("SWGFileSourceSettings").compare(type) == 0) {
       return new SWGFileSourceSettings();
+    }
+    if(QString("SWGFrequency").compare(type) == 0) {
+      return new SWGFrequency();
+    }
+    if(QString("SWGFrequencyBand").compare(type) == 0) {
+      return new SWGFrequencyBand();
+    }
+    if(QString("SWGGain").compare(type) == 0) {
+      return new SWGGain();
     }
     if(QString("SWGHackRFInputSettings").compare(type) == 0) {
       return new SWGHackRFInputSettings();
@@ -140,8 +255,14 @@ namespace SWGSDRangel {
     if(QString("SWGInstanceSummaryResponse").compare(type) == 0) {
       return new SWGInstanceSummaryResponse();
     }
+    if(QString("SWGLimeSdrInputReport").compare(type) == 0) {
+      return new SWGLimeSdrInputReport();
+    }
     if(QString("SWGLimeSdrInputSettings").compare(type) == 0) {
       return new SWGLimeSdrInputSettings();
+    }
+    if(QString("SWGLimeSdrOutputReport").compare(type) == 0) {
+      return new SWGLimeSdrOutputReport();
     }
     if(QString("SWGLimeSdrOutputSettings").compare(type) == 0) {
       return new SWGLimeSdrOutputSettings();
@@ -164,6 +285,24 @@ namespace SWGSDRangel {
     if(QString("SWGNFMModSettings").compare(type) == 0) {
       return new SWGNFMModSettings();
     }
+    if(QString("SWGPerseusReport").compare(type) == 0) {
+      return new SWGPerseusReport();
+    }
+    if(QString("SWGPerseusSettings").compare(type) == 0) {
+      return new SWGPerseusSettings();
+    }
+    if(QString("SWGPlutoSdrInputReport").compare(type) == 0) {
+      return new SWGPlutoSdrInputReport();
+    }
+    if(QString("SWGPlutoSdrInputSettings").compare(type) == 0) {
+      return new SWGPlutoSdrInputSettings();
+    }
+    if(QString("SWGPlutoSdrOutputReport").compare(type) == 0) {
+      return new SWGPlutoSdrOutputReport();
+    }
+    if(QString("SWGPlutoSdrOutputSettings").compare(type) == 0) {
+      return new SWGPlutoSdrOutputSettings();
+    }
     if(QString("SWGPresetExport").compare(type) == 0) {
       return new SWGPresetExport();
     }
@@ -185,14 +324,83 @@ namespace SWGSDRangel {
     if(QString("SWGPresets").compare(type) == 0) {
       return new SWGPresets();
     }
+    if(QString("SWGRDSReport").compare(type) == 0) {
+      return new SWGRDSReport();
+    }
+    if(QString("SWGRDSReport_altFrequencies").compare(type) == 0) {
+      return new SWGRDSReport_altFrequencies();
+    }
+    if(QString("SWGRtlSdrReport").compare(type) == 0) {
+      return new SWGRtlSdrReport();
+    }
     if(QString("SWGRtlSdrSettings").compare(type) == 0) {
       return new SWGRtlSdrSettings();
+    }
+    if(QString("SWGSDRPlayReport").compare(type) == 0) {
+      return new SWGSDRPlayReport();
+    }
+    if(QString("SWGSDRPlaySettings").compare(type) == 0) {
+      return new SWGSDRPlaySettings();
+    }
+    if(QString("SWGSDRdaemonSinkReport").compare(type) == 0) {
+      return new SWGSDRdaemonSinkReport();
+    }
+    if(QString("SWGSDRdaemonSinkSettings").compare(type) == 0) {
+      return new SWGSDRdaemonSinkSettings();
+    }
+    if(QString("SWGSDRdaemonSourceReport").compare(type) == 0) {
+      return new SWGSDRdaemonSourceReport();
+    }
+    if(QString("SWGSDRdaemonSourceSettings").compare(type) == 0) {
+      return new SWGSDRdaemonSourceSettings();
+    }
+    if(QString("SWGSSBDemodReport").compare(type) == 0) {
+      return new SWGSSBDemodReport();
+    }
+    if(QString("SWGSSBDemodSettings").compare(type) == 0) {
+      return new SWGSSBDemodSettings();
+    }
+    if(QString("SWGSSBModReport").compare(type) == 0) {
+      return new SWGSSBModReport();
+    }
+    if(QString("SWGSSBModSettings").compare(type) == 0) {
+      return new SWGSSBModSettings();
+    }
+    if(QString("SWGSampleRate").compare(type) == 0) {
+      return new SWGSampleRate();
     }
     if(QString("SWGSamplingDevice").compare(type) == 0) {
       return new SWGSamplingDevice();
     }
     if(QString("SWGSuccessResponse").compare(type) == 0) {
       return new SWGSuccessResponse();
+    }
+    if(QString("SWGTestSourceSettings").compare(type) == 0) {
+      return new SWGTestSourceSettings();
+    }
+    if(QString("SWGUDPSinkReport").compare(type) == 0) {
+      return new SWGUDPSinkReport();
+    }
+    if(QString("SWGUDPSinkSettings").compare(type) == 0) {
+      return new SWGUDPSinkSettings();
+    }
+    if(QString("SWGUDPSrcReport").compare(type) == 0) {
+      return new SWGUDPSrcReport();
+    }
+    if(QString("SWGUDPSrcSettings").compare(type) == 0) {
+      return new SWGUDPSrcSettings();
+    }
+    if(QString("SWGWFMDemodReport").compare(type) == 0) {
+      return new SWGWFMDemodReport();
+    }
+    if(QString("SWGWFMDemodSettings").compare(type) == 0) {
+      return new SWGWFMDemodSettings();
+    }
+    if(QString("SWGWFMModReport").compare(type) == 0) {
+      return new SWGWFMModReport();
+    }
+    if(QString("SWGWFMModSettings").compare(type) == 0) {
+      return new SWGWFMModSettings();
     }
     
     return nullptr;

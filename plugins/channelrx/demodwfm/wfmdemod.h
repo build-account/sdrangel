@@ -39,7 +39,6 @@
 class ThreadedBasebandSampleSink;
 class DownChannelizer;
 class DeviceSourceAPI;
-class AudioNetSink;
 
 class WFMDemod : public BasebandSampleSink, public ChannelSinkAPI {
 public:
@@ -119,7 +118,28 @@ public:
         m_magsqCount = 0;
     }
 
-    bool isAudioNetSinkRTPCapable() const;
+    virtual int webapiSettingsGet(
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+            bool force,
+            const QStringList& channelSettingsKeys,
+            SWGSDRangel::SWGChannelSettings& response,
+            QString& errorMessage);
+
+    virtual int webapiReportGet(
+            SWGSDRangel::SWGChannelReport& response,
+            QString& errorMessage);
+
+    static int requiredBW(int rfBW)
+    {
+        if (rfBW <= 48000) {
+            return 48000;
+        } else {
+            return (3*rfBW)/2;
+        }
+    }
 
     static const QString m_channelIdURI;
     static const QString m_channelId;
@@ -137,6 +157,7 @@ private:
     int m_inputSampleRate;
     int m_inputFrequencyOffset;
     WFMDemodSettings m_settings;
+    quint32 m_audioSampleRate;
 
 	NCO m_nco;
 	Interpolator m_interpolator; //!< Interpolator between sample rate sent from DSP engine and requested RF bandwidth (rational)
@@ -157,7 +178,6 @@ private:
 
 	AudioVector m_audioBuffer;
 	uint m_audioBufferFill;
-    AudioNetSink *m_audioNetSink;
 
 	AudioFifo m_audioFifo;
 	SampleVector m_sampleBuffer;
@@ -167,8 +187,12 @@ private:
 
     static const int m_udpBlockSize;
 
+    void applyAudioSampleRate(int sampleRate);
     void applyChannelSettings(int inputSampleRate, int inputFrequencyOffset, bool force = false);
     void applySettings(const WFMDemodSettings& settings, bool force = false);
+
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const WFMDemodSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
 };
 
 #endif // INCLUDE_WFMDEMOD_H

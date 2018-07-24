@@ -1,6 +1,6 @@
 /**
  * SDRangel
- * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Stopping instance i.e. /sdrangel with DELETE method is a server only feature. It allows stopping the instance nicely.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV demodulator, Channel Analyzer, Channel Analyzer NG, LoRa demodulator, TCP source   * The content type returned is always application/json except in the following cases:     * An incorrect URL was specified: this document is returned as text/html with a status 400    --- 
+ * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV and DATV demodulators, Channel Analyzer NG, LoRa demodulator   * The device settings and report structures contains only the sub-structure corresponding to the device type. The DeviceSettings and DeviceReport structures documented here shows all of them but only one will be or should be present at a time   * The channel settings and report structures contains only the sub-structure corresponding to the channel type. The ChannelSettings and ChannelReport structures documented here shows all of them but only one will be or should be present at a time    --- 
  *
  * OpenAPI spec version: 4.0.0
  * Contact: f4exb06@gmail.com
@@ -34,10 +34,30 @@ SWGChannelReport::SWGChannelReport() {
     m_tx_isSet = false;
     am_demod_report = nullptr;
     m_am_demod_report_isSet = false;
+    am_mod_report = nullptr;
+    m_am_mod_report_isSet = false;
+    atv_mod_report = nullptr;
+    m_atv_mod_report_isSet = false;
+    bfm_demod_report = nullptr;
+    m_bfm_demod_report_isSet = false;
+    dsd_demod_report = nullptr;
+    m_dsd_demod_report_isSet = false;
     nfm_demod_report = nullptr;
     m_nfm_demod_report_isSet = false;
     nfm_mod_report = nullptr;
     m_nfm_mod_report_isSet = false;
+    ssb_demod_report = nullptr;
+    m_ssb_demod_report_isSet = false;
+    ssb_mod_report = nullptr;
+    m_ssb_mod_report_isSet = false;
+    udp_sink_report = nullptr;
+    m_udp_sink_report_isSet = false;
+    udp_src_report = nullptr;
+    m_udp_src_report_isSet = false;
+    wfm_demod_report = nullptr;
+    m_wfm_demod_report_isSet = false;
+    wfm_mod_report = nullptr;
+    m_wfm_mod_report_isSet = false;
 }
 
 SWGChannelReport::~SWGChannelReport() {
@@ -52,10 +72,30 @@ SWGChannelReport::init() {
     m_tx_isSet = false;
     am_demod_report = new SWGAMDemodReport();
     m_am_demod_report_isSet = false;
+    am_mod_report = new SWGAMModReport();
+    m_am_mod_report_isSet = false;
+    atv_mod_report = new SWGATVModReport();
+    m_atv_mod_report_isSet = false;
+    bfm_demod_report = new SWGBFMDemodReport();
+    m_bfm_demod_report_isSet = false;
+    dsd_demod_report = new SWGDSDDemodReport();
+    m_dsd_demod_report_isSet = false;
     nfm_demod_report = new SWGNFMDemodReport();
     m_nfm_demod_report_isSet = false;
     nfm_mod_report = new SWGNFMModReport();
     m_nfm_mod_report_isSet = false;
+    ssb_demod_report = new SWGSSBDemodReport();
+    m_ssb_demod_report_isSet = false;
+    ssb_mod_report = new SWGSSBModReport();
+    m_ssb_mod_report_isSet = false;
+    udp_sink_report = new SWGUDPSinkReport();
+    m_udp_sink_report_isSet = false;
+    udp_src_report = new SWGUDPSrcReport();
+    m_udp_src_report_isSet = false;
+    wfm_demod_report = new SWGWFMDemodReport();
+    m_wfm_demod_report_isSet = false;
+    wfm_mod_report = new SWGWFMModReport();
+    m_wfm_mod_report_isSet = false;
 }
 
 void
@@ -67,11 +107,41 @@ SWGChannelReport::cleanup() {
     if(am_demod_report != nullptr) { 
         delete am_demod_report;
     }
+    if(am_mod_report != nullptr) { 
+        delete am_mod_report;
+    }
+    if(atv_mod_report != nullptr) { 
+        delete atv_mod_report;
+    }
+    if(bfm_demod_report != nullptr) { 
+        delete bfm_demod_report;
+    }
+    if(dsd_demod_report != nullptr) { 
+        delete dsd_demod_report;
+    }
     if(nfm_demod_report != nullptr) { 
         delete nfm_demod_report;
     }
     if(nfm_mod_report != nullptr) { 
         delete nfm_mod_report;
+    }
+    if(ssb_demod_report != nullptr) { 
+        delete ssb_demod_report;
+    }
+    if(ssb_mod_report != nullptr) { 
+        delete ssb_mod_report;
+    }
+    if(udp_sink_report != nullptr) { 
+        delete udp_sink_report;
+    }
+    if(udp_src_report != nullptr) { 
+        delete udp_src_report;
+    }
+    if(wfm_demod_report != nullptr) { 
+        delete wfm_demod_report;
+    }
+    if(wfm_mod_report != nullptr) { 
+        delete wfm_mod_report;
     }
 }
 
@@ -92,9 +162,29 @@ SWGChannelReport::fromJsonObject(QJsonObject &pJson) {
     
     ::SWGSDRangel::setValue(&am_demod_report, pJson["AMDemodReport"], "SWGAMDemodReport", "SWGAMDemodReport");
     
+    ::SWGSDRangel::setValue(&am_mod_report, pJson["AMModReport"], "SWGAMModReport", "SWGAMModReport");
+    
+    ::SWGSDRangel::setValue(&atv_mod_report, pJson["ATVModReport"], "SWGATVModReport", "SWGATVModReport");
+    
+    ::SWGSDRangel::setValue(&bfm_demod_report, pJson["BFMDemodReport"], "SWGBFMDemodReport", "SWGBFMDemodReport");
+    
+    ::SWGSDRangel::setValue(&dsd_demod_report, pJson["DSDDemodReport"], "SWGDSDDemodReport", "SWGDSDDemodReport");
+    
     ::SWGSDRangel::setValue(&nfm_demod_report, pJson["NFMDemodReport"], "SWGNFMDemodReport", "SWGNFMDemodReport");
     
     ::SWGSDRangel::setValue(&nfm_mod_report, pJson["NFMModReport"], "SWGNFMModReport", "SWGNFMModReport");
+    
+    ::SWGSDRangel::setValue(&ssb_demod_report, pJson["SSBDemodReport"], "SWGSSBDemodReport", "SWGSSBDemodReport");
+    
+    ::SWGSDRangel::setValue(&ssb_mod_report, pJson["SSBModReport"], "SWGSSBModReport", "SWGSSBModReport");
+    
+    ::SWGSDRangel::setValue(&udp_sink_report, pJson["UDPSinkReport"], "SWGUDPSinkReport", "SWGUDPSinkReport");
+    
+    ::SWGSDRangel::setValue(&udp_src_report, pJson["UDPSrcReport"], "SWGUDPSrcReport", "SWGUDPSrcReport");
+    
+    ::SWGSDRangel::setValue(&wfm_demod_report, pJson["WFMDemodReport"], "SWGWFMDemodReport", "SWGWFMDemodReport");
+    
+    ::SWGSDRangel::setValue(&wfm_mod_report, pJson["WFMModReport"], "SWGWFMModReport", "SWGWFMModReport");
     
 }
 
@@ -121,11 +211,41 @@ SWGChannelReport::asJsonObject() {
     if((am_demod_report != nullptr) && (am_demod_report->isSet())){
         toJsonValue(QString("AMDemodReport"), am_demod_report, obj, QString("SWGAMDemodReport"));
     }
+    if((am_mod_report != nullptr) && (am_mod_report->isSet())){
+        toJsonValue(QString("AMModReport"), am_mod_report, obj, QString("SWGAMModReport"));
+    }
+    if((atv_mod_report != nullptr) && (atv_mod_report->isSet())){
+        toJsonValue(QString("ATVModReport"), atv_mod_report, obj, QString("SWGATVModReport"));
+    }
+    if((bfm_demod_report != nullptr) && (bfm_demod_report->isSet())){
+        toJsonValue(QString("BFMDemodReport"), bfm_demod_report, obj, QString("SWGBFMDemodReport"));
+    }
+    if((dsd_demod_report != nullptr) && (dsd_demod_report->isSet())){
+        toJsonValue(QString("DSDDemodReport"), dsd_demod_report, obj, QString("SWGDSDDemodReport"));
+    }
     if((nfm_demod_report != nullptr) && (nfm_demod_report->isSet())){
         toJsonValue(QString("NFMDemodReport"), nfm_demod_report, obj, QString("SWGNFMDemodReport"));
     }
     if((nfm_mod_report != nullptr) && (nfm_mod_report->isSet())){
         toJsonValue(QString("NFMModReport"), nfm_mod_report, obj, QString("SWGNFMModReport"));
+    }
+    if((ssb_demod_report != nullptr) && (ssb_demod_report->isSet())){
+        toJsonValue(QString("SSBDemodReport"), ssb_demod_report, obj, QString("SWGSSBDemodReport"));
+    }
+    if((ssb_mod_report != nullptr) && (ssb_mod_report->isSet())){
+        toJsonValue(QString("SSBModReport"), ssb_mod_report, obj, QString("SWGSSBModReport"));
+    }
+    if((udp_sink_report != nullptr) && (udp_sink_report->isSet())){
+        toJsonValue(QString("UDPSinkReport"), udp_sink_report, obj, QString("SWGUDPSinkReport"));
+    }
+    if((udp_src_report != nullptr) && (udp_src_report->isSet())){
+        toJsonValue(QString("UDPSrcReport"), udp_src_report, obj, QString("SWGUDPSrcReport"));
+    }
+    if((wfm_demod_report != nullptr) && (wfm_demod_report->isSet())){
+        toJsonValue(QString("WFMDemodReport"), wfm_demod_report, obj, QString("SWGWFMDemodReport"));
+    }
+    if((wfm_mod_report != nullptr) && (wfm_mod_report->isSet())){
+        toJsonValue(QString("WFMModReport"), wfm_mod_report, obj, QString("SWGWFMModReport"));
     }
 
     return obj;
@@ -161,6 +281,46 @@ SWGChannelReport::setAmDemodReport(SWGAMDemodReport* am_demod_report) {
     this->m_am_demod_report_isSet = true;
 }
 
+SWGAMModReport*
+SWGChannelReport::getAmModReport() {
+    return am_mod_report;
+}
+void
+SWGChannelReport::setAmModReport(SWGAMModReport* am_mod_report) {
+    this->am_mod_report = am_mod_report;
+    this->m_am_mod_report_isSet = true;
+}
+
+SWGATVModReport*
+SWGChannelReport::getAtvModReport() {
+    return atv_mod_report;
+}
+void
+SWGChannelReport::setAtvModReport(SWGATVModReport* atv_mod_report) {
+    this->atv_mod_report = atv_mod_report;
+    this->m_atv_mod_report_isSet = true;
+}
+
+SWGBFMDemodReport*
+SWGChannelReport::getBfmDemodReport() {
+    return bfm_demod_report;
+}
+void
+SWGChannelReport::setBfmDemodReport(SWGBFMDemodReport* bfm_demod_report) {
+    this->bfm_demod_report = bfm_demod_report;
+    this->m_bfm_demod_report_isSet = true;
+}
+
+SWGDSDDemodReport*
+SWGChannelReport::getDsdDemodReport() {
+    return dsd_demod_report;
+}
+void
+SWGChannelReport::setDsdDemodReport(SWGDSDDemodReport* dsd_demod_report) {
+    this->dsd_demod_report = dsd_demod_report;
+    this->m_dsd_demod_report_isSet = true;
+}
+
 SWGNFMDemodReport*
 SWGChannelReport::getNfmDemodReport() {
     return nfm_demod_report;
@@ -181,6 +341,66 @@ SWGChannelReport::setNfmModReport(SWGNFMModReport* nfm_mod_report) {
     this->m_nfm_mod_report_isSet = true;
 }
 
+SWGSSBDemodReport*
+SWGChannelReport::getSsbDemodReport() {
+    return ssb_demod_report;
+}
+void
+SWGChannelReport::setSsbDemodReport(SWGSSBDemodReport* ssb_demod_report) {
+    this->ssb_demod_report = ssb_demod_report;
+    this->m_ssb_demod_report_isSet = true;
+}
+
+SWGSSBModReport*
+SWGChannelReport::getSsbModReport() {
+    return ssb_mod_report;
+}
+void
+SWGChannelReport::setSsbModReport(SWGSSBModReport* ssb_mod_report) {
+    this->ssb_mod_report = ssb_mod_report;
+    this->m_ssb_mod_report_isSet = true;
+}
+
+SWGUDPSinkReport*
+SWGChannelReport::getUdpSinkReport() {
+    return udp_sink_report;
+}
+void
+SWGChannelReport::setUdpSinkReport(SWGUDPSinkReport* udp_sink_report) {
+    this->udp_sink_report = udp_sink_report;
+    this->m_udp_sink_report_isSet = true;
+}
+
+SWGUDPSrcReport*
+SWGChannelReport::getUdpSrcReport() {
+    return udp_src_report;
+}
+void
+SWGChannelReport::setUdpSrcReport(SWGUDPSrcReport* udp_src_report) {
+    this->udp_src_report = udp_src_report;
+    this->m_udp_src_report_isSet = true;
+}
+
+SWGWFMDemodReport*
+SWGChannelReport::getWfmDemodReport() {
+    return wfm_demod_report;
+}
+void
+SWGChannelReport::setWfmDemodReport(SWGWFMDemodReport* wfm_demod_report) {
+    this->wfm_demod_report = wfm_demod_report;
+    this->m_wfm_demod_report_isSet = true;
+}
+
+SWGWFMModReport*
+SWGChannelReport::getWfmModReport() {
+    return wfm_mod_report;
+}
+void
+SWGChannelReport::setWfmModReport(SWGWFMModReport* wfm_mod_report) {
+    this->wfm_mod_report = wfm_mod_report;
+    this->m_wfm_mod_report_isSet = true;
+}
+
 
 bool
 SWGChannelReport::isSet(){
@@ -189,8 +409,18 @@ SWGChannelReport::isSet(){
         if(channel_type != nullptr && *channel_type != QString("")){ isObjectUpdated = true; break;}
         if(m_tx_isSet){ isObjectUpdated = true; break;}
         if(am_demod_report != nullptr && am_demod_report->isSet()){ isObjectUpdated = true; break;}
+        if(am_mod_report != nullptr && am_mod_report->isSet()){ isObjectUpdated = true; break;}
+        if(atv_mod_report != nullptr && atv_mod_report->isSet()){ isObjectUpdated = true; break;}
+        if(bfm_demod_report != nullptr && bfm_demod_report->isSet()){ isObjectUpdated = true; break;}
+        if(dsd_demod_report != nullptr && dsd_demod_report->isSet()){ isObjectUpdated = true; break;}
         if(nfm_demod_report != nullptr && nfm_demod_report->isSet()){ isObjectUpdated = true; break;}
         if(nfm_mod_report != nullptr && nfm_mod_report->isSet()){ isObjectUpdated = true; break;}
+        if(ssb_demod_report != nullptr && ssb_demod_report->isSet()){ isObjectUpdated = true; break;}
+        if(ssb_mod_report != nullptr && ssb_mod_report->isSet()){ isObjectUpdated = true; break;}
+        if(udp_sink_report != nullptr && udp_sink_report->isSet()){ isObjectUpdated = true; break;}
+        if(udp_src_report != nullptr && udp_src_report->isSet()){ isObjectUpdated = true; break;}
+        if(wfm_demod_report != nullptr && wfm_demod_report->isSet()){ isObjectUpdated = true; break;}
+        if(wfm_mod_report != nullptr && wfm_mod_report->isSet()){ isObjectUpdated = true; break;}
     }while(false);
     return isObjectUpdated;
 }

@@ -58,15 +58,10 @@ DATVDemod::DATVDemod(DeviceSourceAPI *deviceAPI) :
 
     m_objRFFilter = new fftfilt(-256000.0 / 1024000.0, 256000.0 / 1024000.0, rfFilterFftLength);
 
-    //To setup correct Sample Rate
     m_channelizer = new DownChannelizer(this);
-    channelSampleRateChanged();
-
     m_threadedChannelizer = new ThreadedBasebandSampleSink(m_channelizer, this);
     m_deviceAPI->addThreadedSink(m_threadedChannelizer);
     m_deviceAPI->addChannelAPI(this);
-
-    connect(m_channelizer, SIGNAL(inputSampleRateChanged()), this, SLOT(channelSampleRateChanged()));
 }
 
 DATVDemod::~DATVDemod()
@@ -96,20 +91,7 @@ DATVDemod::~DATVDemod()
     m_deviceAPI->removeThreadedSink(m_threadedChannelizer);
     delete m_threadedChannelizer;
     delete m_channelizer;
-}
-
-void DATVDemod::channelSampleRateChanged()
-{
-    qDebug() << "DATVDemod::channelSampleRateChanged:"
-             << " sample rate: " << m_channelizer->getInputSampleRate();
-
-    if(m_objRunning.intMsps!=m_channelizer->getInputSampleRate())
-    {
-        m_objRunning.intMsps = m_channelizer->getInputSampleRate();
-        m_objRunning.intSampleRate = m_objRunning.intMsps;
-
-        ApplySettings();
-    }
+    delete m_objRFFilter;
 }
 
 bool DATVDemod::SetTVScreen(TVScreen *objScreen)
@@ -784,7 +766,6 @@ void DATVDemod::InitDATVFramework()
 
 void DATVDemod::feed(const SampleVector::const_iterator& begin, const SampleVector::const_iterator& end, bool firstOfBurst __attribute__((unused)))
 {
-    qint16 * ptrBufferToRelease=NULL;
     float fltI;
     float fltQ;
     leansdr::cf32 objIQ;
@@ -878,18 +859,7 @@ void DATVDemod::feed(const SampleVector::const_iterator& begin, const SampleVect
             }
 
         }
-
-        //********** demodulation **********
-
     }
-
-    if(ptrBufferToRelease!=NULL)
-    {
-        delete ptrBufferToRelease;
-    }
-
-
-
 }
 
 void DATVDemod::start()
@@ -904,10 +874,38 @@ void DATVDemod::stop()
 
 bool DATVDemod::handleMessage(const Message& cmd)
 {
-    qDebug() << "DATVDemod::handleMessage";
+    if (DownChannelizer::MsgChannelizerNotification::match(cmd))
+    {
+        DownChannelizer::MsgChannelizerNotification& objNotif = (DownChannelizer::MsgChannelizerNotification&) cmd;
 
+        qDebug() << "DATVDemod::handleMessage: MsgChannelizerNotification:"
+                << " m_intSampleRate: " << objNotif.getSampleRate()
+                << " m_intFrequencyOffset: " << objNotif.getFrequencyOffset();
 
-    if (MsgConfigureDATVDemod::match(cmd))
+        if (m_objRunning.intMsps != objNotif.getSampleRate())
+        {
+            m_objRunning.intMsps = objNotif.getSampleRate();
+            m_objRunning.intSampleRate = m_objRunning.intMsps;
+
+            ApplySettings();
+        }
+
+        return true;
+    }
+    else if (MsgConfigureChannelizer::match(cmd))
+    {
+        MsgConfigureChannelizer& cfg = (MsgConfigureChannelizer&) cmd;
+
+        m_channelizer->configure(m_channelizer->getInputMessageQueue(),
+                m_channelizer->getInputSampleRate(),
+                cfg.getCenterFrequency());
+
+        qDebug() << "DATVDemod::handleMessage: MsgConfigureChannelizer: sampleRate: " << m_channelizer->getInputSampleRate()
+                << " centerFrequency: " << cfg.getCenterFrequency();
+
+        return true;
+    }
+    else if (MsgConfigureDATVDemod::match(cmd))
 	{
         MsgConfigureDATVDemod& objCfg = (MsgConfigureDATVDemod&) cmd;
 
@@ -960,8 +958,7 @@ bool DATVDemod::handleMessage(const Message& cmd)
                     << " intExcursion: " << objCfg.m_objMsgConfig.intExcursion;
 
             ApplySettings();
-         }
-
+        }
 
 		return true;
 	}
@@ -973,12 +970,10 @@ bool DATVDemod::handleMessage(const Message& cmd)
 
 void DATVDemod::ApplySettings()
 {
-
     if(m_objRunning.intMsps==0)
     {
         return;
     }
-
 
     InitDATVParameters(m_objRunning.intMsps,
                        m_objRunning.intRFBandwidth,
@@ -996,7 +991,6 @@ void DATVDemod::ApplySettings()
                        m_objRunning.fltRollOff,
                        m_objRunning.blnViterbi,
                        m_objRunning.intExcursion);
-
 }
 
 int DATVDemod::GetSampleRate()

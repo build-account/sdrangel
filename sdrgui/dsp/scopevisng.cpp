@@ -62,13 +62,16 @@ ScopeVisNG::ScopeVisNG(GLScopeNG* glScope) :
     setObjectName("ScopeVisNG");
     m_traceDiscreteMemory.resize(m_traceChunkSize); // arbitrary
     m_glScope->setTraces(&m_traces.m_tracesData, &m_traces.m_traces[0]);
-    for (int i = 0; i < (int) nbProjectionTypes; i++) {
+    for (int i = 0; i < (int) Projector::nbProjectionTypes; i++) {
         m_projectorCache[i] = 0.0;
     }
 }
 
 ScopeVisNG::~ScopeVisNG()
 {
+    for (std::vector<TriggerCondition*>::iterator it = m_triggerConditions.begin(); it != m_triggerConditions.end(); ++ it) {
+        delete *it;
+    }
 }
 
 void ScopeVisNG::setSampleRate(int sampleRate)
@@ -267,15 +270,15 @@ void ScopeVisNG::processTrace(const SampleVector::const_iterator& cbegin, const 
     {
         if ((m_triggerState == TriggerUntriggered) || (m_triggerState == TriggerDelay))
         {
-            TriggerCondition& triggerCondition = m_triggerConditions[m_currentTriggerIndex]; // current trigger condition
+            TriggerCondition* triggerCondition = m_triggerConditions[m_currentTriggerIndex]; // current trigger condition
 
             while (begin < end)
             {
                 if (m_triggerState == TriggerDelay)
                 {
-                    if (triggerCondition.m_triggerDelayCount > 0) // skip samples during delay period
+                    if (triggerCondition->m_triggerDelayCount > 0) // skip samples during delay period
                     {
-                        triggerCondition.m_triggerDelayCount--;
+                        triggerCondition->m_triggerDelayCount--;
                         ++begin;
                         continue;
                     }
@@ -301,11 +304,11 @@ void ScopeVisNG::processTrace(const SampleVector::const_iterator& cbegin, const 
                 }
 
                 // look for trigger
-                if (m_triggerComparator.triggered(*begin, triggerCondition))
+                if (m_triggerComparator.triggered(*begin, *triggerCondition))
                 {
-                    if (triggerCondition.m_triggerData.m_triggerDelay > 0)
+                    if (triggerCondition->m_triggerData.m_triggerDelay > 0)
                     {
-                        triggerCondition.m_triggerDelayCount = triggerCondition.m_triggerData.m_triggerDelay; // initialize delayed samples counter
+                        triggerCondition->m_triggerDelayCount = triggerCondition->m_triggerData.m_triggerDelay; // initialize delayed samples counter
                         m_triggerState = TriggerDelay;
                         ++begin;
                         continue;
@@ -398,18 +401,18 @@ void ScopeVisNG::processTrace(const SampleVector::const_iterator& cbegin, const 
 
 bool ScopeVisNG::nextTrigger()
 {
-    TriggerCondition& triggerCondition = m_triggerConditions[m_currentTriggerIndex]; // current trigger condition
+    TriggerCondition *triggerCondition = m_triggerConditions[m_currentTriggerIndex]; // current trigger condition
 
-    if (triggerCondition.m_triggerData.m_triggerRepeat > 0)
+    if (triggerCondition->m_triggerData.m_triggerRepeat > 0)
     {
-        if (triggerCondition.m_triggerCounter < triggerCondition.m_triggerData.m_triggerRepeat)
+        if (triggerCondition->m_triggerCounter < triggerCondition->m_triggerData.m_triggerRepeat)
         {
-            triggerCondition.m_triggerCounter++;
+            triggerCondition->m_triggerCounter++;
             return true; // not final keep going
         }
         else
         {
-            triggerCondition.m_triggerCounter = 0; // reset for next time
+            triggerCondition->m_triggerCounter = 0; // reset for next time
         }
     }
 
@@ -439,7 +442,7 @@ int ScopeVisNG::processTraces(const SampleVector::const_iterator& cbegin, const 
 
     while ((begin < end) && (m_nbSamples > 0))
     {
-        std::vector<TraceControl>::iterator itCtl = m_traces.m_tracesControl.begin();
+        std::vector<TraceControl*>::iterator itCtl = m_traces.m_tracesControl.begin();
         std::vector<TraceData>::iterator itData = m_traces.m_tracesData.begin();
         std::vector<float *>::iterator itTrace = m_traces.m_traces[m_traces.currentBufferIndex()].begin();
 
@@ -449,23 +452,56 @@ int ScopeVisNG::processTraces(const SampleVector::const_iterator& cbegin, const 
                 continue;
             }
 
-            ProjectionType projectionType = itData->m_projectionType;
+            Projector::ProjectionType projectionType = itData->m_projectionType;
 
-            if (itCtl->m_traceCount[m_traces.currentBufferIndex()] < m_traceSize)
+            if ((*itCtl)->m_traceCount[m_traces.currentBufferIndex()] < m_traceSize)
             {
-                uint32_t& traceCount = itCtl->m_traceCount[m_traces.currentBufferIndex()]; // reference for code clarity
+                uint32_t& traceCount = (*itCtl)->m_traceCount[m_traces.currentBufferIndex()]; // reference for code clarity
                 float v;
 
-                if (projectionType == ProjectionMagLin)
+                if (projectionType == Projector::ProjectionMagLin)
                 {
-                    v = (itCtl->m_projector.run(*begin) - itData->m_ofs)*itData->m_amp - 1.0f;
+                    v = ((*itCtl)->m_projector.run(*begin) - itData->m_ofs)*itData->m_amp - 1.0f;
                 }
-                else if (projectionType == ProjectionMagDB)
+                else if (projectionType == Projector::ProjectionMagSq)
                 {
-                   // there is no processing advantage in direct calculation without projector
-//                    uint32_t magsq = begin->m_real*begin->m_real + begin->m_imag*begin->m_imag;
-//                    v = ((log10f(magsq/1073741824.0f)*0.2f - 2.0f*itData->m_ofs) + 2.0f)*itData->m_amp - 1.0f;
-                    float pdB = itCtl->m_projector.run(*begin);
+                    Real magsq = (*itCtl)->m_projector.run(*begin);
+                    v = (magsq - itData->m_ofs)*itData->m_amp - 1.0f;
+
+                    if ((traceCount >= shift) && (traceCount < shift+length)) // power display overlay values construction
+                    {
+                        if (traceCount == shift)
+                        {
+                            (*itCtl)->m_maxPow = 0.0f;
+                            (*itCtl)->m_sumPow = 0.0f;
+                            (*itCtl)->m_nbPow = 1;
+                        }
+
+                        if (magsq > 0.0f)
+                        {
+                            if (magsq > (*itCtl)->m_maxPow)
+                            {
+                                (*itCtl)->m_maxPow = magsq;
+                            }
+
+                            (*itCtl)->m_sumPow += magsq;
+                            (*itCtl)->m_nbPow++;
+                        }
+                    }
+
+                    if ((m_nbSamples == 1) && ((*itCtl)->m_nbPow > 0)) // on last sample create power display overlay
+                    {
+                        double avgPow = (*itCtl)->m_sumPow / (*itCtl)->m_nbPow;
+                        itData->m_textOverlay = QString("%1  %2").arg((*itCtl)->m_maxPow, 0, 'e', 2).arg(avgPow, 0, 'e', 2);
+                        (*itCtl)->m_nbPow = 0;
+                    }
+                }
+                else if (projectionType == Projector::ProjectionMagDB)
+                {
+                    Real re = begin->m_real / SDR_RX_SCALEF;
+                    Real im = begin->m_imag / SDR_RX_SCALEF;
+                    double magsq = re*re + im*im;
+                    float pdB = log10f(magsq) * 10.0f;
                     float p = pdB - (100.0f * itData->m_ofs);
                     v = ((p/50.0f) + 2.0f)*itData->m_amp - 1.0f;
 
@@ -473,34 +509,35 @@ int ScopeVisNG::processTraces(const SampleVector::const_iterator& cbegin, const 
                     {
                         if (traceCount == shift)
                         {
-                            itCtl->m_maxPow = -200.0f;
-                            itCtl->m_sumPow = 0.0f;
-                            itCtl->m_nbPow = 1;
+                            (*itCtl)->m_maxPow = 0.0f;
+                            (*itCtl)->m_sumPow = 0.0f;
+                            (*itCtl)->m_nbPow = 1;
                         }
 
-                        if (pdB > -200.0f)
+                        if (magsq > 0.0f)
                         {
-                            if (pdB > itCtl->m_maxPow)
+                            if (magsq > (*itCtl)->m_maxPow)
                             {
-                                itCtl->m_maxPow = pdB;
+                                (*itCtl)->m_maxPow = magsq;
                             }
 
-                            itCtl->m_sumPow += pdB;
-                            itCtl->m_nbPow++;
+                            (*itCtl)->m_sumPow += magsq;
+                            (*itCtl)->m_nbPow++;
                         }
                     }
 
-                    if ((m_nbSamples == 1) && (itCtl->m_nbPow > 0)) // on last sample create power display overlay
+                    if ((m_nbSamples == 1) && ((*itCtl)->m_nbPow > 0)) // on last sample create power display overlay
                     {
-                        double avgPow = itCtl->m_sumPow / itCtl->m_nbPow;
-                        double peakToAvgPow = itCtl->m_maxPow - avgPow;
-                        itData->m_textOverlay = QString("%1  %2  %3").arg(itCtl->m_maxPow, 0, 'f', 1).arg(avgPow, 0, 'f', 1).arg(peakToAvgPow, 4, 'f', 1, ' ');
-                        itCtl->m_nbPow = 0;
+                        double avgPow = log10f((*itCtl)->m_sumPow / (*itCtl)->m_nbPow)*10.0;
+                        double peakPow = log10f((*itCtl)->m_maxPow)*10.0;
+                        double peakToAvgPow = peakPow - avgPow;
+                        itData->m_textOverlay = QString("%1  %2  %3").arg(peakPow, 0, 'f', 1).arg(avgPow, 0, 'f', 1).arg(peakToAvgPow, 4, 'f', 1, ' ');
+                        (*itCtl)->m_nbPow = 0;
                     }
                 }
                 else
                 {
-                    v = (itCtl->m_projector.run(*begin) - itData->m_ofs) * itData->m_amp;
+                    v = ((*itCtl)->m_projector.run(*begin) - itData->m_ofs) * itData->m_amp;
                 }
 
                 if(v > 1.0f) {
@@ -543,8 +580,6 @@ void ScopeVisNG::stop()
 
 bool ScopeVisNG::handleMessage(const Message& message)
 {
-    qDebug() << "ScopeVisNG::handleMessage" << message.getIdentifier();
-
     if (DSPSignalNotification::match(message))
     {
         DSPSignalNotification& notif = (DSPSignalNotification&) message;
@@ -621,10 +656,11 @@ bool ScopeVisNG::handleMessage(const Message& message)
     }
     else if (MsgScopeVisNGAddTrigger::match(message))
     {
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGAddTrigger";
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGAddTrigger& conf = (MsgScopeVisNGAddTrigger&) message;
-        m_triggerConditions.push_back(TriggerCondition(conf.getTriggerData()));
-        m_triggerConditions.back().initProjector();
+        m_triggerConditions.push_back(new TriggerCondition(conf.getTriggerData()));
+        m_triggerConditions.back()->initProjector();
         return true;
     }
     else if (MsgScopeVisNGChangeTrigger::match(message))
@@ -632,15 +668,16 @@ bool ScopeVisNG::handleMessage(const Message& message)
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGChangeTrigger& conf = (MsgScopeVisNGChangeTrigger&) message;
         uint32_t triggerIndex = conf.getTriggerIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGChangeTrigger: " << triggerIndex;
 
         if (triggerIndex < m_triggerConditions.size())
         {
-            m_triggerConditions[triggerIndex].setData(conf.getTriggerData());
+            m_triggerConditions[triggerIndex]->setData(conf.getTriggerData());
 
             if (triggerIndex == m_focusedTriggerIndex)
             {
                 computeDisplayTriggerLevels();
-                m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex].m_triggerData);
+                m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex]->m_triggerData);
                 updateGLScopeDisplay();
             }
         }
@@ -652,9 +689,13 @@ bool ScopeVisNG::handleMessage(const Message& message)
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGRemoveTrigger& conf = (MsgScopeVisNGRemoveTrigger&) message;
         uint32_t triggerIndex = conf.getTriggerIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGRemoveTrigger: " << triggerIndex;
 
-        if (triggerIndex < m_triggerConditions.size()) {
+        if (triggerIndex < m_triggerConditions.size())
+        {
+            TriggerCondition *triggerCondition = m_triggerConditions[triggerIndex];
             m_triggerConditions.erase(m_triggerConditions.begin() + triggerIndex);
+            delete triggerCondition;
         }
 
         return true;
@@ -664,6 +705,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGMoveTrigger& conf = (MsgScopeVisNGMoveTrigger&) message;
         int triggerIndex = conf.getTriggerIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGMoveTrigger: " << triggerIndex;
 
         if (!conf.getMoveUp() && (triggerIndex == 0)) {
             return true;
@@ -671,12 +713,12 @@ bool ScopeVisNG::handleMessage(const Message& message)
 
         int nextTriggerIndex = (triggerIndex + (conf.getMoveUp() ? 1 : -1)) % m_triggerConditions.size();
 
-        TriggerCondition nextTrigger = m_triggerConditions[nextTriggerIndex];
+        TriggerCondition *nextTrigger = m_triggerConditions[nextTriggerIndex];
         m_triggerConditions[nextTriggerIndex] = m_triggerConditions[triggerIndex];
         m_triggerConditions[triggerIndex] = nextTrigger;
 
         computeDisplayTriggerLevels();
-        m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex].m_triggerData);
+        m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex]->m_triggerData);
         updateGLScopeDisplay();
 
         return true;
@@ -685,12 +727,13 @@ bool ScopeVisNG::handleMessage(const Message& message)
     {
         MsgScopeVisNGFocusOnTrigger& conf = (MsgScopeVisNGFocusOnTrigger&) message;
         uint32_t triggerIndex = conf.getTriggerIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGFocusOnTrigger: " << triggerIndex;
 
         if (triggerIndex < m_triggerConditions.size())
         {
             m_focusedTriggerIndex = triggerIndex;
             computeDisplayTriggerLevels();
-            m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex].m_triggerData);
+            m_glScope->setFocusedTriggerData(m_triggerConditions[m_focusedTriggerIndex]->m_triggerData);
             updateGLScopeDisplay();
         }
 
@@ -698,6 +741,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
     }
     else if (MsgScopeVisNGAddTrace::match(message))
     {
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGAddTrace";
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGAddTrace& conf = (MsgScopeVisNGAddTrace&) message;
         m_traces.addTrace(conf.getTraceData(), m_traceSize);
@@ -712,7 +756,9 @@ bool ScopeVisNG::handleMessage(const Message& message)
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGChangeTrace& conf = (MsgScopeVisNGChangeTrace&) message;
         bool doComputeTriggerLevelsOnDisplay = m_traces.isVerticalDisplayChange(conf.getTraceData(), conf.getTraceIndex());
-        m_traces.changeTrace(conf.getTraceData(), conf.getTraceIndex());
+        uint32_t traceIndex = conf.getTraceIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGChangeTrace: " << traceIndex;
+        m_traces.changeTrace(conf.getTraceData(), traceIndex);
         updateMaxTraceDelay();
         if (doComputeTriggerLevelsOnDisplay) computeDisplayTriggerLevels();
         updateGLScopeDisplay();
@@ -722,7 +768,9 @@ bool ScopeVisNG::handleMessage(const Message& message)
     {
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGRemoveTrace& conf = (MsgScopeVisNGRemoveTrace&) message;
-        m_traces.removeTrace(conf.getTraceIndex());
+        uint32_t traceIndex = conf.getTraceIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGRemoveTrace: " << traceIndex;
+        m_traces.removeTrace(traceIndex);
         updateMaxTraceDelay();
         computeDisplayTriggerLevels();
         updateGLScopeDisplay();
@@ -732,7 +780,9 @@ bool ScopeVisNG::handleMessage(const Message& message)
     {
         QMutexLocker configLocker(&m_mutex);
         MsgScopeVisNGMoveTrace& conf = (MsgScopeVisNGMoveTrace&) message;
-        m_traces.moveTrace(conf.getTraceIndex(), conf.getMoveUp());
+        uint32_t traceIndex = conf.getTraceIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGMoveTrace: " << traceIndex;
+        m_traces.moveTrace(traceIndex, conf.getMoveUp());
         //updateMaxTraceDelay();
         computeDisplayTriggerLevels();
         updateGLScopeDisplay();
@@ -742,6 +792,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
     {
         MsgScopeVisNGFocusOnTrace& conf = (MsgScopeVisNGFocusOnTrace&) message;
         uint32_t traceIndex = conf.getTraceIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGFocusOnTrace: " << traceIndex;
 
         if (traceIndex < m_traces.m_tracesData.size())
         {
@@ -755,6 +806,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
     }
     else if (MsgScopeVisNGOneShot::match(message))
     {
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGOneShot";
         MsgScopeVisNGOneShot& conf = (MsgScopeVisNGOneShot&) message;
         bool oneShot = conf.getOneShot();
         m_triggerOneShot = oneShot;
@@ -765,6 +817,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
     {
         MsgScopeVisNGMemoryTrace& conf = (MsgScopeVisNGMemoryTrace&) message;
         uint32_t memoryIndex = conf.getMemoryIndex();
+        qDebug() << "ScopeVisNG::handleMessage: MsgScopeVisNGMemoryTrace: " << memoryIndex;
 
         if (memoryIndex != m_currentTraceMemoryIndex)
         {
@@ -778,6 +831,7 @@ bool ScopeVisNG::handleMessage(const Message& message)
     }
     else
     {
+        qDebug() << "ScopeVisNG::handleMessage" << message.getIdentifier() << " not handled";
         return false;
     }
 }
@@ -786,10 +840,10 @@ void ScopeVisNG::updateMaxTraceDelay()
 {
     int maxTraceDelay = 0;
     bool allocateCache = false;
-    uint32_t projectorCounts[(int) nbProjectionTypes];
-    memset(projectorCounts, 0, ((int) nbProjectionTypes)*sizeof(uint32_t));
+    uint32_t projectorCounts[(int) Projector::nbProjectionTypes];
+    memset(projectorCounts, 0, ((int) Projector::nbProjectionTypes)*sizeof(uint32_t));
     std::vector<TraceData>::iterator itData = m_traces.m_tracesData.begin();
-    std::vector<TraceControl>::iterator itCtrl = m_traces.m_tracesControl.begin();
+    std::vector<TraceControl*>::iterator itCtrl = m_traces.m_tracesControl.begin();
 
     for (; itData != m_traces.m_tracesData.end(); ++itData, ++itCtrl)
     {
@@ -799,17 +853,17 @@ void ScopeVisNG::updateMaxTraceDelay()
         }
 
         if (itData->m_projectionType < 0) {
-            itData->m_projectionType = ProjectionReal;
+            itData->m_projectionType = Projector::ProjectionReal;
         }
 
         if (projectorCounts[(int) itData->m_projectionType] > 0)
         {
             allocateCache = true;
-            itCtrl->m_projector.setCacheMaster(false);
+            (*itCtrl)->m_projector.setCacheMaster(false);
         }
         else
         {
-            itCtrl->m_projector.setCacheMaster(true);
+            (*itCtrl)->m_projector.setCacheMaster(true);
         }
 
         projectorCounts[(int) itData->m_projectionType]++;
@@ -820,9 +874,9 @@ void ScopeVisNG::updateMaxTraceDelay()
     for (; itCtrl != m_traces.m_tracesControl.end(); ++itCtrl)
     {
         if (allocateCache) {
-            itCtrl->m_projector.setCache(m_projectorCache);
+            (*itCtrl)->m_projector.setCache(m_projectorCache);
         } else {
-            itCtrl->m_projector.setCache(0);
+            (*itCtrl)->m_projector.setCache(0);
         }
     }
 
@@ -854,18 +908,18 @@ void ScopeVisNG::computeDisplayTriggerLevels()
 
     for (; itData != m_traces.m_tracesData.end(); ++itData)
     {
-        if ((m_focusedTriggerIndex < m_triggerConditions.size()) && (m_triggerConditions[m_focusedTriggerIndex].m_projector.getProjectionType() == itData->m_projectionType))
+        if ((m_focusedTriggerIndex < m_triggerConditions.size()) && (m_triggerConditions[m_focusedTriggerIndex]->m_projector.getProjectionType() == itData->m_projectionType))
         {
-            float level = m_triggerConditions[m_focusedTriggerIndex].m_triggerData.m_triggerLevel;
+            float level = m_triggerConditions[m_focusedTriggerIndex]->m_triggerData.m_triggerLevel;
             float levelPowerLin = level + 1.0f;
             float levelPowerdB = (100.0f * (level - 1.0f));
             float v;
 
-            if (itData->m_projectionType == ProjectionMagLin)
+            if ((itData->m_projectionType == Projector::ProjectionMagLin) || (itData->m_projectionType == Projector::ProjectionMagSq))
             {
                 v = (levelPowerLin - itData->m_ofs)*itData->m_amp - 1.0f;
             }
-            else if (itData->m_projectionType == ProjectionMagDB)
+            else if (itData->m_projectionType == Projector::ProjectionMagDB)
             {
                 float ofsdB = itData->m_ofs * 100.0f;
                 v = ((levelPowerdB + 100.0f - ofsdB)*itData->m_amp)/50.0f - 1.0f;

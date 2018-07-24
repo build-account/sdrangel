@@ -18,6 +18,11 @@
 #include <QUdpSocket>
 #include <QHostAddress>
 
+#include "SWGChannelSettings.h"
+#include "SWGUDPSrcSettings.h"
+#include "SWGChannelReport.h"
+#include "SWGUDPSrcReport.h"
+
 #include "dsp/dspengine.h"
 #include "util/db.h"
 #include "dsp/downchannelizer.h"
@@ -25,7 +30,6 @@
 #include "dsp/dspcommands.h"
 #include "device/devicesourceapi.h"
 
-#include "udpsrcgui.h"
 #include "udpsrc.h"
 
 const Real UDPSrc::m_agcTarget = 16384.0f;
@@ -61,7 +65,6 @@ UDPSrc::UDPSrc(DeviceSourceAPI *deviceAPI) :
 	m_udpBuffer16 = new UDPSink<Sample16>(this, udpBlockSize, m_settings.m_udpPort);
 	m_udpBufferMono16 = new UDPSink<int16_t>(this, udpBlockSize, m_settings.m_udpPort);
     m_udpBuffer24 = new UDPSink<Sample24>(this, udpBlockSize, m_settings.m_udpPort);
-    m_udpBufferMono24 = new UDPSink<int32_t>(this, udpBlockSize, m_settings.m_udpPort);
 	m_audioSocket = new QUdpSocket(this);
 	m_udpAudioBuf = new char[m_udpAudioPayloadSize];
 
@@ -113,16 +116,15 @@ UDPSrc::~UDPSrc()
 {
 	delete m_audioSocket;
 	delete m_udpBuffer24;
-	delete m_udpBufferMono24;
     delete m_udpBuffer16;
     delete m_udpBufferMono16;
 	delete[] m_udpAudioBuf;
-	if (UDPFilter) delete UDPFilter;
 	DSPEngine::instance()->getAudioDeviceManager()->removeAudioSink(&m_audioFifo);
 	m_deviceAPI->removeChannelAPI(this);
     m_deviceAPI->removeThreadedSink(m_threadedChannelizer);
     delete m_threadedChannelizer;
     delete m_channelizer;
+    delete UDPFilter;
 }
 
 void UDPSrc::setSpectrum(MessageQueue* messageQueue, bool enabled)
@@ -153,7 +155,8 @@ void UDPSrc::feed(const SampleVector::const_iterator& begin, const SampleVector:
             if ((m_settings.m_agc) &&
                 (m_settings.m_sampleFormat != UDPSrcSettings::FormatNFM) &&
                 (m_settings.m_sampleFormat != UDPSrcSettings::FormatNFMMono) &&
-                (m_settings.m_sampleFormat != UDPSrcSettings::FormatIQ))
+                (m_settings.m_sampleFormat != UDPSrcSettings::FormatIQ16) &&
+                (m_settings.m_sampleFormat != UDPSrcSettings::FormatIQ24))
             {
                 agcFactor = m_agc.feedAndGetValue(ci);
                 inMagSq = m_agc.getMagSq();
@@ -494,7 +497,6 @@ void UDPSrc::applySettings(const UDPSrcSettings& settings, bool force)
             << " m_squelchGate" << settings.m_squelchGate
             << " m_agc" << settings.m_agc
             << " m_sampleFormat: " << settings.m_sampleFormat
-            << " m_sampleSize: " << 16  + settings.m_sampleSize*8
             << " m_outputSampleRate: " << settings.m_outputSampleRate
             << " m_rfBandwidth: " << settings.m_rfBandwidth
             << " m_fmDeviation: " << settings.m_fmDeviation
@@ -526,7 +528,7 @@ void UDPSrc::applySettings(const UDPSrcSettings& settings, bool force)
 
         m_squelchRelease = (settings.m_outputSampleRate * settings.m_squelchGate) / 100;
         initSquelch(m_squelchOpen);
-        m_agc.resize(settings.m_outputSampleRate * 0.2, m_agcTarget); // Fixed 200 ms
+        m_agc.resize(settings.m_outputSampleRate/5, settings.m_outputSampleRate/20, m_agcTarget); // Fixed 200 ms
         int stepDownDelay =  (settings.m_outputSampleRate * (settings.m_squelchGate == 0 ? 1 : settings.m_squelchGate))/100;
         m_agc.setStepDownDelay(stepDownDelay);
         m_agc.setGate(settings.m_outputSampleRate * 0.05);
@@ -543,7 +545,7 @@ void UDPSrc::applySettings(const UDPSrcSettings& settings, bool force)
         if (settings.m_audioActive)
         {
             m_audioBufferFill = 0;
-            DSPEngine::instance()->getAudioDeviceManager()->addAudioSink(&m_audioFifo);
+            DSPEngine::instance()->getAudioDeviceManager()->addAudioSink(&m_audioFifo, getInputMessageQueue());
         }
         else
         {
@@ -582,7 +584,6 @@ void UDPSrc::applySettings(const UDPSrcSettings& settings, bool force)
         m_udpBuffer16->setAddress(const_cast<QString&>(settings.m_udpAddress));
         m_udpBufferMono16->setAddress(const_cast<QString&>(settings.m_udpAddress));
         m_udpBuffer24->setAddress(const_cast<QString&>(settings.m_udpAddress));
-        m_udpBufferMono24->setAddress(const_cast<QString&>(settings.m_udpAddress));
     }
 
     if ((settings.m_udpPort != m_settings.m_udpPort) || force)
@@ -590,7 +591,6 @@ void UDPSrc::applySettings(const UDPSrcSettings& settings, bool force)
         m_udpBuffer16->setPort(settings.m_udpPort);
         m_udpBufferMono16->setPort(settings.m_udpPort);
         m_udpBuffer24->setPort(settings.m_udpPort);
-        m_udpBufferMono24->setPort(settings.m_udpPort);
     }
 
     if ((settings.m_audioPort != m_settings.m_audioPort) || force)
@@ -640,4 +640,157 @@ bool UDPSrc::deserialize(const QByteArray& data)
         m_inputMessageQueue.push(msg);
         return false;
     }
+}
+
+int UDPSrc::webapiSettingsGet(
+        SWGSDRangel::SWGChannelSettings& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setUdpSrcSettings(new SWGSDRangel::SWGUDPSrcSettings());
+    response.getUdpSrcSettings()->init();
+    webapiFormatChannelSettings(response, m_settings);
+    return 200;
+}
+
+int UDPSrc::webapiSettingsPutPatch(
+                bool force,
+                const QStringList& channelSettingsKeys,
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage __attribute__((unused)))
+{
+    UDPSrcSettings settings;
+    bool frequencyOffsetChanged = false;
+
+    if (channelSettingsKeys.contains("outputSampleRate")) {
+        settings.m_outputSampleRate = response.getUdpSrcSettings()->getOutputSampleRate();
+    }
+    if (channelSettingsKeys.contains("sampleFormat")) {
+        settings.m_sampleFormat = (UDPSrcSettings::SampleFormat) response.getUdpSrcSettings()->getSampleFormat();
+    }
+    if (channelSettingsKeys.contains("inputFrequencyOffset"))
+    {
+        settings.m_inputFrequencyOffset = response.getUdpSrcSettings()->getInputFrequencyOffset();
+        frequencyOffsetChanged = true;
+    }
+    if (channelSettingsKeys.contains("rfBandwidth")) {
+        settings.m_rfBandwidth = response.getUdpSrcSettings()->getRfBandwidth();
+    }
+    if (channelSettingsKeys.contains("fmDeviation")) {
+        settings.m_fmDeviation = response.getUdpSrcSettings()->getFmDeviation();
+    }
+    if (channelSettingsKeys.contains("channelMute")) {
+        settings.m_channelMute = response.getUdpSrcSettings()->getChannelMute() != 0;
+    }
+    if (channelSettingsKeys.contains("gain")) {
+        settings.m_gain = response.getUdpSrcSettings()->getGain();
+    }
+    if (channelSettingsKeys.contains("squelchDB")) {
+        settings.m_squelchdB = response.getUdpSrcSettings()->getSquelchDb();
+    }
+    if (channelSettingsKeys.contains("squelchGate")) {
+        settings.m_squelchGate = response.getUdpSrcSettings()->getSquelchGate();
+    }
+    if (channelSettingsKeys.contains("squelchEnabled")) {
+        settings.m_squelchEnabled = response.getUdpSrcSettings()->getSquelchEnabled() != 0;
+    }
+    if (channelSettingsKeys.contains("agc")) {
+        settings.m_agc = response.getUdpSrcSettings()->getAgc() != 0;
+    }
+    if (channelSettingsKeys.contains("audioActive")) {
+        settings.m_audioActive = response.getUdpSrcSettings()->getAudioActive() != 0;
+    }
+    if (channelSettingsKeys.contains("audioStereo")) {
+        settings.m_audioStereo = response.getUdpSrcSettings()->getAudioStereo() != 0;
+    }
+    if (channelSettingsKeys.contains("volume")) {
+        settings.m_volume = response.getUdpSrcSettings()->getVolume();
+    }
+    if (channelSettingsKeys.contains("udpAddress")) {
+        settings.m_udpAddress = *response.getUdpSrcSettings()->getUdpAddress();
+    }
+    if (channelSettingsKeys.contains("udpPort")) {
+        settings.m_udpPort = response.getUdpSrcSettings()->getUdpPort();
+    }
+    if (channelSettingsKeys.contains("audioPort")) {
+        settings.m_audioPort = response.getUdpSrcSettings()->getAudioPort();
+    }
+    if (channelSettingsKeys.contains("rgbColor")) {
+        settings.m_rgbColor = response.getUdpSrcSettings()->getRgbColor();
+    }
+    if (channelSettingsKeys.contains("title")) {
+        settings.m_title = *response.getUdpSrcSettings()->getTitle();
+    }
+
+    if (frequencyOffsetChanged)
+    {
+        UDPSrc::MsgConfigureChannelizer *msgChan = UDPSrc::MsgConfigureChannelizer::create(
+                (int) settings.m_outputSampleRate,
+                (int) settings.m_inputFrequencyOffset);
+        m_inputMessageQueue.push(msgChan);
+    }
+
+    MsgConfigureUDPSrc *msg = MsgConfigureUDPSrc::create(settings, force);
+    m_inputMessageQueue.push(msg);
+
+    qDebug("UDPSrc::webapiSettingsPutPatch: forward to GUI: %p", m_guiMessageQueue);
+    if (m_guiMessageQueue) // forward to GUI if any
+    {
+        MsgConfigureUDPSrc *msgToGUI = MsgConfigureUDPSrc::create(settings, force);
+        m_guiMessageQueue->push(msgToGUI);
+    }
+
+    webapiFormatChannelSettings(response, settings);
+
+    return 200;
+}
+
+int UDPSrc::webapiReportGet(
+        SWGSDRangel::SWGChannelReport& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setUdpSrcReport(new SWGSDRangel::SWGUDPSrcReport());
+    response.getUdpSrcReport()->init();
+    webapiFormatChannelReport(response);
+    return 200;
+}
+
+void UDPSrc::webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const UDPSrcSettings& settings)
+{
+    response.getUdpSrcSettings()->setOutputSampleRate(settings.m_outputSampleRate);
+    response.getUdpSrcSettings()->setSampleFormat((int) settings.m_sampleFormat);
+    response.getUdpSrcSettings()->setInputFrequencyOffset(settings.m_inputFrequencyOffset);
+    response.getUdpSrcSettings()->setRfBandwidth(settings.m_rfBandwidth);
+    response.getUdpSrcSettings()->setFmDeviation(settings.m_fmDeviation);
+    response.getUdpSrcSettings()->setChannelMute(settings.m_channelMute ? 1 : 0);
+    response.getUdpSrcSettings()->setGain(settings.m_gain);
+    response.getUdpSrcSettings()->setSquelchDb(settings.m_squelchdB);
+    response.getUdpSrcSettings()->setSquelchGate(settings.m_squelchGate);
+    response.getUdpSrcSettings()->setSquelchEnabled(settings.m_squelchEnabled ? 1 : 0);
+    response.getUdpSrcSettings()->setAgc(settings.m_agc ? 1 : 0);
+    response.getUdpSrcSettings()->setAudioActive(settings.m_audioActive ? 1 : 0);
+    response.getUdpSrcSettings()->setAudioStereo(settings.m_audioStereo ? 1 : 0);
+    response.getUdpSrcSettings()->setVolume(settings.m_volume);
+
+    if (response.getUdpSrcSettings()->getUdpAddress()) {
+        *response.getUdpSrcSettings()->getUdpAddress() = settings.m_udpAddress;
+    } else {
+        response.getUdpSrcSettings()->setUdpAddress(new QString(settings.m_udpAddress));
+    }
+
+    response.getUdpSrcSettings()->setUdpPort(settings.m_udpPort);
+    response.getUdpSrcSettings()->setAudioPort(settings.m_audioPort);
+    response.getUdpSrcSettings()->setRgbColor(settings.m_rgbColor);
+
+    if (response.getUdpSrcSettings()->getTitle()) {
+        *response.getUdpSrcSettings()->getTitle() = settings.m_title;
+    } else {
+        response.getUdpSrcSettings()->setTitle(new QString(settings.m_title));
+    }
+}
+
+void UDPSrc::webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response)
+{
+    response.getUdpSrcReport()->setChannelPowerDb(CalcDb::dbPower(getMagSq()));
+    response.getUdpSrcReport()->setSquelch(m_squelchOpen ? 1 : 0);
+    response.getUdpSrcReport()->setInputSampleRate(m_inputSampleRate);
 }

@@ -53,10 +53,9 @@ DeviceUISet::DeviceUISet(int tabIndex, bool rxElseTx, QTimer& timer)
 
     // m_spectrum needs to have its font to be set since it cannot be inherited from the main window
     QFont font;
-    font.setFamily(QStringLiteral("Sans Serif"));
+    font.setFamily(QStringLiteral("Liberation Sans"));
     font.setPointSize(9);
     m_spectrum->setFont(font);
-
 }
 
 DeviceUISet::~DeviceUISet()
@@ -192,9 +191,12 @@ void DeviceUISet::loadRxChannelSettings(const Preset *preset, PluginAPI *pluginA
 
             for(int i = 0; i < channelRegistrations->count(); i++)
             {
-                if((*channelRegistrations)[i].m_channelIdURI == channelConfig.m_channelIdURI)
+                //if((*channelRegistrations)[i].m_channelIdURI == channelConfig.m_channelIdURI)
+                if (compareRxChannelURIs((*channelRegistrations)[i].m_channelIdURI, channelConfig.m_channelIdURI))
                 {
-                    qDebug("DeviceUISet::loadRxChannelSettings: creating new channel [%s]", qPrintable(channelConfig.m_channelIdURI));
+                    qDebug("DeviceUISet::loadRxChannelSettings: creating new channel [%s] from config [%s]",
+                            qPrintable((*channelRegistrations)[i].m_channelIdURI),
+                            qPrintable(channelConfig.m_channelIdURI));
                     BasebandSampleSink *rxChannel =
                             (*channelRegistrations)[i].m_plugin->createRxChannelBS(m_deviceSourceAPI);
                     PluginInstanceGUI *rxChannelGUI =
@@ -271,9 +273,11 @@ void DeviceUISet::loadTxChannelSettings(const Preset *preset, PluginAPI *pluginA
 
             for(int i = 0; i < channelRegistrations->count(); i++)
             {
-                if((*channelRegistrations)[i].m_channelIdURI == channelConfig.m_channelIdURI)
+                if ((*channelRegistrations)[i].m_channelIdURI == channelConfig.m_channelIdURI)
                 {
-                    qDebug("DeviceUISet::loadTxChannelSettings: creating new channel [%s]", qPrintable(channelConfig.m_channelIdURI));
+                    qDebug("DeviceUISet::loadTxChannelSettings: creating new channel [%s] from config [%s]",
+                            qPrintable((*channelRegistrations)[i].m_channelIdURI),
+                            qPrintable(channelConfig.m_channelIdURI));
                     BasebandSampleSource *txChannel =
                             (*channelRegistrations)[i].m_plugin->createTxChannelBS(m_deviceSinkAPI);
                     PluginInstanceGUI *txChannelGUI =
@@ -348,4 +352,19 @@ bool DeviceUISet::ChannelInstanceRegistration::operator<(const ChannelInstanceRe
     }
 }
 
-
+bool DeviceUISet::compareRxChannelURIs(const QString& registerdChannelURI, const QString& xChannelURI)
+{
+    if ((xChannelURI == "sdrangel.channel.chanalyzerng") || (xChannelURI == "sdrangel.channel.chanalyzer")) { // renamed ChanalyzerNG to Chanalyzer in 4.0.0
+        return registerdChannelURI == "sdrangel.channel.chanalyzer";
+    } else if ((xChannelURI == "de.maintech.sdrangelove.channel.am") || (xChannelURI == "sdrangel.channel.amdemod")) {
+        return registerdChannelURI == "sdrangel.channel.amdemod";
+    } else  if ((xChannelURI == "de.maintech.sdrangelove.channel.nfm") || (xChannelURI == "sdrangel.channel.nfmdemod")) {
+        return registerdChannelURI == "sdrangel.channel.nfmdemod";
+    } else  if ((xChannelURI == "de.maintech.sdrangelove.channel.ssb") || (xChannelURI == "sdrangel.channel.ssbdemod")) {
+        return registerdChannelURI == "sdrangel.channel.ssbdemod";
+    } else  if ((xChannelURI == "de.maintech.sdrangelove.channel.wfm") || (xChannelURI == "sdrangel.channel.wfmdemod")) {
+        return registerdChannelURI == "sdrangel.channel.wfmdemod";
+    } else {
+        return registerdChannelURI == xChannelURI;
+    }
+}

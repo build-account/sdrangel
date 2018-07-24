@@ -101,6 +101,8 @@ ATVDemod::~ATVDemod()
     m_deviceAPI->removeThreadedSink(m_threadedChannelizer);
     delete m_threadedChannelizer;
     delete m_channelizer;
+    delete m_DSBFilter;
+    delete m_DSBFilterBuffer;
 }
 
 void ATVDemod::setTVScreen(TVScreen *objScreen)
@@ -431,13 +433,13 @@ void ATVDemod::demod(Complex& c)
 
     //********** process video sample **********
 
-    if (m_running.m_enmATVStandard == ATVStdHSkip)
+    if (m_registeredTVScreen) // can process only if the screen is available (set via the GUI)
     {
-        processHSkip(fltVal, intVal);
-    }
-    else
-    {
-        processClassic(fltVal, intVal);
+        if (m_running.m_enmATVStandard == ATVStdHSkip) {
+            processHSkip(fltVal, intVal);
+        } else {
+            processClassic(fltVal, intVal);
+        }
     }
 }
 

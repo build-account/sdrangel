@@ -16,6 +16,10 @@
 
 #include <QDebug>
 
+#include "SWGChannelSettings.h"
+#include "SWGChannelReport.h"
+#include "SWGUDPSinkReport.h"
+
 #include "device/devicesinkapi.h"
 #include "dsp/upchannelizer.h"
 #include "dsp/threadedbasebandsamplesource.h"
@@ -78,12 +82,12 @@ UDPSink::UDPSink(DeviceSinkAPI *deviceAPI) :
 
 UDPSink::~UDPSink()
 {
-    delete[] m_SSBFilterBuffer;
-    delete m_SSBFilter;
     m_deviceAPI->removeChannelAPI(this);
     m_deviceAPI->removeThreadedSource(m_threadedChannelizer);
     delete m_threadedChannelizer;
     delete m_channelizer;
+    delete m_SSBFilter;
+    delete[] m_SSBFilterBuffer;
 }
 
 void UDPSink::start()
@@ -145,7 +149,7 @@ void UDPSink::pull(Sample& sample)
 
 void UDPSink::modulateSample()
 {
-    if (m_settings.m_sampleFormat == UDPSinkSettings::FormatS16LE) // Linear I/Q transponding
+    if (m_settings.m_sampleFormat == UDPSinkSettings::FormatSnLE) // Linear I/Q transponding
     {
         Sample s;
 
@@ -171,7 +175,7 @@ void UDPSink::modulateSample()
     }
     else if (m_settings.m_sampleFormat == UDPSinkSettings::FormatNFM)
     {
-        FixReal t;
+        qint16 t;
         readMonoSample(t);
 
         m_inMovingAverage.feed((t*t)/1073741824.0);
@@ -194,7 +198,7 @@ void UDPSink::modulateSample()
     }
     else if (m_settings.m_sampleFormat == UDPSinkSettings::FormatAM)
     {
-        FixReal t;
+        qint16 t;
         readMonoSample(t);
         m_inMovingAverage.feed((t*t)/(SDR_TX_SCALED*SDR_TX_SCALED));
         m_inMagsq = m_inMovingAverage.average();
@@ -215,7 +219,7 @@ void UDPSink::modulateSample()
     }
     else if ((m_settings.m_sampleFormat == UDPSinkSettings::FormatLSB) || (m_settings.m_sampleFormat == UDPSinkSettings::FormatUSB))
     {
-        FixReal t;
+        qint16 t;
         Complex c, ci;
         fftfilt::cmplx *filtered;
         int n_out = 0;
@@ -589,4 +593,155 @@ bool UDPSink::deserialize(const QByteArray& data)
         m_inputMessageQueue.push(msg);
         return false;
     }
+}
+
+int UDPSink::webapiSettingsGet(
+        SWGSDRangel::SWGChannelSettings& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setUdpSinkSettings(new SWGSDRangel::SWGUDPSinkSettings());
+    response.getUdpSinkSettings()->init();
+    webapiFormatChannelSettings(response, m_settings);
+    return 200;
+}
+
+int UDPSink::webapiSettingsPutPatch(
+                bool force,
+                const QStringList& channelSettingsKeys,
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage __attribute__((unused)))
+{
+    UDPSinkSettings settings;
+    bool frequencyOffsetChanged = false;
+
+    if (channelSettingsKeys.contains("sampleFormat")) {
+        settings.m_sampleFormat = (UDPSinkSettings::SampleFormat) response.getUdpSinkSettings()->getSampleFormat();
+    }
+    if (channelSettingsKeys.contains("inputSampleRate")) {
+        settings.m_inputSampleRate = response.getUdpSinkSettings()->getInputSampleRate();
+    }
+    if (channelSettingsKeys.contains("inputFrequencyOffset"))
+    {
+        settings.m_inputFrequencyOffset = response.getUdpSinkSettings()->getInputFrequencyOffset();
+        frequencyOffsetChanged = true;
+    }
+    if (channelSettingsKeys.contains("rfBandwidth")) {
+        settings.m_rfBandwidth = response.getUdpSinkSettings()->getRfBandwidth();
+    }
+    if (channelSettingsKeys.contains("lowCutoff")) {
+        settings.m_lowCutoff = response.getUdpSinkSettings()->getLowCutoff();
+    }
+    if (channelSettingsKeys.contains("fmDeviation")) {
+        settings.m_fmDeviation = response.getUdpSinkSettings()->getFmDeviation();
+    }
+    if (channelSettingsKeys.contains("amModFactor")) {
+        settings.m_amModFactor = response.getUdpSinkSettings()->getAmModFactor();
+    }
+    if (channelSettingsKeys.contains("channelMute")) {
+        settings.m_channelMute = response.getUdpSinkSettings()->getChannelMute() != 0;
+    }
+    if (channelSettingsKeys.contains("gainIn")) {
+        settings.m_gainIn = response.getUdpSinkSettings()->getGainIn();
+    }
+    if (channelSettingsKeys.contains("gainOut")) {
+        settings.m_gainOut = response.getUdpSinkSettings()->getGainOut();
+    }
+    if (channelSettingsKeys.contains("squelch")) {
+        settings.m_squelch = response.getUdpSinkSettings()->getSquelch();
+    }
+    if (channelSettingsKeys.contains("squelchGate")) {
+        settings.m_squelchGate = response.getUdpSinkSettings()->getSquelchGate();
+    }
+    if (channelSettingsKeys.contains("squelchEnabled")) {
+        settings.m_squelchEnabled = response.getUdpSinkSettings()->getSquelchEnabled() != 0;
+    }
+    if (channelSettingsKeys.contains("autoRWBalance")) {
+        settings.m_autoRWBalance = response.getUdpSinkSettings()->getAutoRwBalance() != 0;
+    }
+    if (channelSettingsKeys.contains("stereoInput")) {
+        settings.m_stereoInput = response.getUdpSinkSettings()->getStereoInput() != 0;
+    }
+    if (channelSettingsKeys.contains("rgbColor")) {
+        settings.m_rgbColor = response.getUdpSinkSettings()->getRgbColor();
+    }
+    if (channelSettingsKeys.contains("udpAddress")) {
+        settings.m_udpAddress = *response.getUdpSinkSettings()->getUdpAddress();
+    }
+    if (channelSettingsKeys.contains("udpPort")) {
+        settings.m_udpPort = response.getUdpSinkSettings()->getUdpPort();
+    }
+    if (channelSettingsKeys.contains("title")) {
+        settings.m_title = *response.getUdpSinkSettings()->getTitle();
+    }
+
+    if (frequencyOffsetChanged)
+    {
+        UDPSink::MsgConfigureChannelizer *msgChan = UDPSink::MsgConfigureChannelizer::create(
+                settings.m_inputSampleRate,
+                settings.m_inputFrequencyOffset);
+        m_inputMessageQueue.push(msgChan);
+    }
+
+    MsgConfigureUDPSink *msg = MsgConfigureUDPSink::create(settings, force);
+    m_inputMessageQueue.push(msg);
+
+    if (m_guiMessageQueue) // forward to GUI if any
+    {
+        MsgConfigureUDPSink *msgToGUI = MsgConfigureUDPSink::create(settings, force);
+        m_guiMessageQueue->push(msgToGUI);
+    }
+
+    webapiFormatChannelSettings(response, settings);
+
+    return 200;
+}
+
+int UDPSink::webapiReportGet(
+        SWGSDRangel::SWGChannelReport& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setUdpSinkReport(new SWGSDRangel::SWGUDPSinkReport());
+    response.getUdpSinkReport()->init();
+    webapiFormatChannelReport(response);
+    return 200;
+}
+
+void UDPSink::webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const UDPSinkSettings& settings)
+{
+    response.getUdpSinkSettings()->setSampleFormat((int) settings.m_sampleFormat);
+    response.getUdpSinkSettings()->setInputSampleRate(settings.m_inputSampleRate);
+    response.getUdpSinkSettings()->setInputFrequencyOffset(settings.m_inputFrequencyOffset);
+    response.getUdpSinkSettings()->setRfBandwidth(settings.m_rfBandwidth);
+    response.getUdpSinkSettings()->setLowCutoff(settings.m_lowCutoff);
+    response.getUdpSinkSettings()->setFmDeviation(settings.m_fmDeviation);
+    response.getUdpSinkSettings()->setAmModFactor(settings.m_amModFactor);
+    response.getUdpSinkSettings()->setChannelMute(settings.m_channelMute ? 1 : 0);
+    response.getUdpSinkSettings()->setGainIn(settings.m_gainIn);
+    response.getUdpSinkSettings()->setGainOut(settings.m_gainOut);
+    response.getUdpSinkSettings()->setSquelch(settings.m_squelch);
+    response.getUdpSinkSettings()->setSquelchGate(settings.m_squelchGate);
+    response.getUdpSinkSettings()->setSquelchEnabled(settings.m_squelchEnabled ? 1 : 0);
+    response.getUdpSinkSettings()->setAutoRwBalance(settings.m_autoRWBalance ? 1 : 0);
+    response.getUdpSinkSettings()->setStereoInput(settings.m_stereoInput ? 1 : 0);
+    response.getUdpSinkSettings()->setRgbColor(settings.m_rgbColor);
+
+    if (response.getUdpSinkSettings()->getUdpAddress()) {
+        *response.getUdpSinkSettings()->getUdpAddress() = settings.m_udpAddress;
+    } else {
+        response.getUdpSinkSettings()->setUdpAddress(new QString(settings.m_udpAddress));
+    }
+
+    response.getUdpSinkSettings()->setUdpPort(settings.m_udpPort);
+
+    if (response.getUdpSinkSettings()->getTitle()) {
+        *response.getUdpSinkSettings()->getTitle() = settings.m_title;
+    } else {
+        response.getUdpSinkSettings()->setTitle(new QString(settings.m_title));
+    }
+}
+
+void UDPSink::webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response)
+{
+    response.getUdpSinkReport()->setChannelPowerDb(CalcDb::dbPower(getMagSq()));
+    response.getUdpSinkReport()->setChannelSampleRate(m_outputSampleRate);
 }

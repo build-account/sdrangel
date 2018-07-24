@@ -11,6 +11,8 @@
 #include "util/simpleserializer.h"
 #include "util/db.h"
 #include "gui/basicchannelsettingsdialog.h"
+#include "gui/crightclickenabler.h"
+#include "gui/audioselectdialog.h"
 #include "dsp/dspengine.h"
 #include "mainwindow.h"
 #include "nfmdemod.h"
@@ -75,7 +77,7 @@ bool NFMDemodGUI::handleMessage(const Message& message)
 {
     if (NFMDemod::MsgReportCTCSSFreq::match(message))
     {
-        qDebug("NFMDemodGUI::handleMessage: NFMDemod::MsgReportCTCSSFreq");
+        //qDebug("NFMDemodGUI::handleMessage: NFMDemod::MsgReportCTCSSFreq");
         NFMDemod::MsgReportCTCSSFreq& report = (NFMDemod::MsgReportCTCSSFreq&) message;
         setCtcssFreq(report.getFrequency());
         //qDebug("NFMDemodGUI::handleMessage: MsgReportCTCSSFreq: %f", report.getFrequency());
@@ -204,18 +206,6 @@ void NFMDemodGUI::on_audioMute_toggled(bool checked)
 	applySettings();
 }
 
-void NFMDemodGUI::on_copyAudioToUDP_toggled(bool checked)
-{
-    m_settings.m_copyAudioToUDP = checked;
-    applySettings();
-}
-
-void NFMDemodGUI::on_useRTP_toggled(bool checked)
-{
-    m_settings.m_copyAudioUseRTP = checked;
-    applySettings();
-}
-
 void NFMDemodGUI::on_ctcss_currentIndexChanged(int index)
 {
 	m_settings.m_ctcssIndex = index;
@@ -237,14 +227,11 @@ void NFMDemodGUI::onMenuDialogCalled(const QPoint &p)
     dialog.exec();
 
     m_settings.m_inputFrequencyOffset = m_channelMarker.getCenterFrequency();
-    m_settings.m_udpAddress = m_channelMarker.getUDPAddress(),
-    m_settings.m_udpPort =  m_channelMarker.getUDPSendPort(),
     m_settings.m_rgbColor = m_channelMarker.getColor().rgb();
     m_settings.m_title = m_channelMarker.getTitle();
 
     setWindowTitle(m_settings.m_title);
     setTitleColor(m_settings.m_rgbColor);
-    displayUDPAddress();
 
     applySettings();
 }
@@ -270,6 +257,9 @@ NFMDemodGUI::NFMDemodGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, Baseban
 	m_nfmDemod->setMessageQueueToGUI(getInputMessageQueue());
 
 	connect(&MainWindow::getInstance()->getMasterTimer(), SIGNAL(timeout()), this, SLOT(tick()));
+
+    CRightClickEnabler *audioMuteRightClickEnabler = new CRightClickEnabler(ui->audioMute);
+    connect(audioMuteRightClickEnabler, SIGNAL(rightClick()), this, SLOT(audioSelect()));
 
     blockApplySettings(true);
 
@@ -303,8 +293,6 @@ NFMDemodGUI::NFMDemodGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, Baseban
     m_channelMarker.setBandwidth(5000);
     m_channelMarker.setCenterFrequency(0);
     m_channelMarker.setTitle("NFM Demodulator");
-    m_channelMarker.setUDPAddress("127.0.0.1");
-    m_channelMarker.setUDPSendPort(9999);
     m_channelMarker.blockSignals(false);
     m_channelMarker.setVisible(true); // activate signal on the last setting only
 
@@ -319,10 +307,6 @@ NFMDemodGUI::NFMDemodGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, Baseban
 
 	QChar delta = QChar(0x94, 0x03);
 	ui->deltaSquelch->setText(delta);
-
-	if (!m_nfmDemod->isAudioNetSinkRTPCapable()) {
-	    ui->useRTP->hide();
-	}
 
 	connect(getInputMessageQueue(), SIGNAL(messageEnqueued()), this, SLOT(handleInputMessages()));
 
@@ -363,7 +347,6 @@ void NFMDemodGUI::displaySettings()
 
     setTitleColor(m_settings.m_rgbColor);
     setWindowTitle(m_channelMarker.getTitle());
-    displayUDPAddress();
 
     blockApplySettings(true);
 
@@ -398,20 +381,10 @@ void NFMDemodGUI::displaySettings()
 
     ui->ctcssOn->setChecked(m_settings.m_ctcssOn);
     ui->audioMute->setChecked(m_settings.m_audioMute);
-    ui->copyAudioToUDP->setChecked(m_settings.m_copyAudioToUDP);
 
     ui->ctcss->setCurrentIndex(m_settings.m_ctcssIndex);
 
-    if (m_nfmDemod->isAudioNetSinkRTPCapable()) {
-        ui->useRTP->setChecked(m_settings.m_copyAudioUseRTP);
-    }
-
     blockApplySettings(false);
-}
-
-void NFMDemodGUI::displayUDPAddress()
-{
-    ui->copyAudioToUDP->setToolTip(QString("Copy audio output to UDP %1:%2").arg(m_settings.m_udpAddress).arg(m_settings.m_udpPort));
 }
 
 void NFMDemodGUI::leaveEvent(QEvent*)
@@ -439,6 +412,19 @@ void NFMDemodGUI::setCtcssFreq(Real ctcssFreq)
 void NFMDemodGUI::blockApplySettings(bool block)
 {
 	m_doApplySettings = !block;
+}
+
+void NFMDemodGUI::audioSelect()
+{
+    qDebug("NFMDemodGUI::audioSelect");
+    AudioSelectDialog audioSelect(DSPEngine::instance()->getAudioDeviceManager(), m_settings.m_audioDeviceName);
+    audioSelect.exec();
+
+    if (audioSelect.m_selected)
+    {
+        m_settings.m_audioDeviceName = audioSelect.m_audioDeviceName;
+        applySettings();
+    }
 }
 
 void NFMDemodGUI::tick()

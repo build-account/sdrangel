@@ -1,6 +1,6 @@
 /**
  * SDRangel
- * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Stopping instance i.e. /sdrangel with DELETE method is a server only feature. It allows stopping the instance nicely.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV demodulator, Channel Analyzer, Channel Analyzer NG, LoRa demodulator, TCP source   * The content type returned is always application/json except in the following cases:     * An incorrect URL was specified: this document is returned as text/html with a status 400    --- 
+ * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV and DATV demodulators, Channel Analyzer NG, LoRa demodulator   * The device settings and report structures contains only the sub-structure corresponding to the device type. The DeviceSettings and DeviceReport structures documented here shows all of them but only one will be or should be present at a time   * The channel settings and report structures contains only the sub-structure corresponding to the channel type. The ChannelSettings and ChannelReport structures documented here shows all of them but only one will be or should be present at a time    --- 
  *
  * OpenAPI spec version: 4.0.0
  * Contact: f4exb06@gmail.com
@@ -36,24 +36,16 @@ SWGAMDemodSettings::SWGAMDemodSettings() {
     m_squelch_isSet = false;
     volume = 0.0f;
     m_volume_isSet = false;
-    audio_sample_rate = 0;
-    m_audio_sample_rate_isSet = false;
     audio_mute = 0;
     m_audio_mute_isSet = false;
     bandpass_enable = 0;
     m_bandpass_enable_isSet = false;
-    copy_audio_to_udp = 0;
-    m_copy_audio_to_udp_isSet = false;
-    copy_audio_use_rtp = 0;
-    m_copy_audio_use_rtp_isSet = false;
-    udp_address = nullptr;
-    m_udp_address_isSet = false;
-    udp_port = 0;
-    m_udp_port_isSet = false;
     rgb_color = 0;
     m_rgb_color_isSet = false;
     title = nullptr;
     m_title_isSet = false;
+    audio_device_name = nullptr;
+    m_audio_device_name_isSet = false;
 }
 
 SWGAMDemodSettings::~SWGAMDemodSettings() {
@@ -70,24 +62,16 @@ SWGAMDemodSettings::init() {
     m_squelch_isSet = false;
     volume = 0.0f;
     m_volume_isSet = false;
-    audio_sample_rate = 0;
-    m_audio_sample_rate_isSet = false;
     audio_mute = 0;
     m_audio_mute_isSet = false;
     bandpass_enable = 0;
     m_bandpass_enable_isSet = false;
-    copy_audio_to_udp = 0;
-    m_copy_audio_to_udp_isSet = false;
-    copy_audio_use_rtp = 0;
-    m_copy_audio_use_rtp_isSet = false;
-    udp_address = new QString("");
-    m_udp_address_isSet = false;
-    udp_port = 0;
-    m_udp_port_isSet = false;
     rgb_color = 0;
     m_rgb_color_isSet = false;
     title = new QString("");
     m_title_isSet = false;
+    audio_device_name = new QString("");
+    m_audio_device_name_isSet = false;
 }
 
 void
@@ -99,15 +83,11 @@ SWGAMDemodSettings::cleanup() {
 
 
 
-
-
-    if(udp_address != nullptr) { 
-        delete udp_address;
-    }
-
-
     if(title != nullptr) { 
         delete title;
+    }
+    if(audio_device_name != nullptr) { 
+        delete audio_device_name;
     }
 }
 
@@ -130,23 +110,15 @@ SWGAMDemodSettings::fromJsonObject(QJsonObject &pJson) {
     
     ::SWGSDRangel::setValue(&volume, pJson["volume"], "float", "");
     
-    ::SWGSDRangel::setValue(&audio_sample_rate, pJson["audioSampleRate"], "qint32", "");
-    
     ::SWGSDRangel::setValue(&audio_mute, pJson["audioMute"], "qint32", "");
     
     ::SWGSDRangel::setValue(&bandpass_enable, pJson["bandpassEnable"], "qint32", "");
     
-    ::SWGSDRangel::setValue(&copy_audio_to_udp, pJson["copyAudioToUDP"], "qint32", "");
-    
-    ::SWGSDRangel::setValue(&copy_audio_use_rtp, pJson["copyAudioUseRTP"], "qint32", "");
-    
-    ::SWGSDRangel::setValue(&udp_address, pJson["udpAddress"], "QString", "QString");
-    
-    ::SWGSDRangel::setValue(&udp_port, pJson["udpPort"], "qint32", "");
-    
     ::SWGSDRangel::setValue(&rgb_color, pJson["rgbColor"], "qint32", "");
     
     ::SWGSDRangel::setValue(&title, pJson["title"], "QString", "QString");
+    
+    ::SWGSDRangel::setValue(&audio_device_name, pJson["audioDeviceName"], "QString", "QString");
     
 }
 
@@ -176,32 +148,20 @@ SWGAMDemodSettings::asJsonObject() {
     if(m_volume_isSet){
         obj->insert("volume", QJsonValue(volume));
     }
-    if(m_audio_sample_rate_isSet){
-        obj->insert("audioSampleRate", QJsonValue(audio_sample_rate));
-    }
     if(m_audio_mute_isSet){
         obj->insert("audioMute", QJsonValue(audio_mute));
     }
     if(m_bandpass_enable_isSet){
         obj->insert("bandpassEnable", QJsonValue(bandpass_enable));
     }
-    if(m_copy_audio_to_udp_isSet){
-        obj->insert("copyAudioToUDP", QJsonValue(copy_audio_to_udp));
-    }
-    if(m_copy_audio_use_rtp_isSet){
-        obj->insert("copyAudioUseRTP", QJsonValue(copy_audio_use_rtp));
-    }
-    if(udp_address != nullptr && *udp_address != QString("")){
-        toJsonValue(QString("udpAddress"), udp_address, obj, QString("QString"));
-    }
-    if(m_udp_port_isSet){
-        obj->insert("udpPort", QJsonValue(udp_port));
-    }
     if(m_rgb_color_isSet){
         obj->insert("rgbColor", QJsonValue(rgb_color));
     }
     if(title != nullptr && *title != QString("")){
         toJsonValue(QString("title"), title, obj, QString("QString"));
+    }
+    if(audio_device_name != nullptr && *audio_device_name != QString("")){
+        toJsonValue(QString("audioDeviceName"), audio_device_name, obj, QString("QString"));
     }
 
     return obj;
@@ -248,16 +208,6 @@ SWGAMDemodSettings::setVolume(float volume) {
 }
 
 qint32
-SWGAMDemodSettings::getAudioSampleRate() {
-    return audio_sample_rate;
-}
-void
-SWGAMDemodSettings::setAudioSampleRate(qint32 audio_sample_rate) {
-    this->audio_sample_rate = audio_sample_rate;
-    this->m_audio_sample_rate_isSet = true;
-}
-
-qint32
 SWGAMDemodSettings::getAudioMute() {
     return audio_mute;
 }
@@ -275,46 +225,6 @@ void
 SWGAMDemodSettings::setBandpassEnable(qint32 bandpass_enable) {
     this->bandpass_enable = bandpass_enable;
     this->m_bandpass_enable_isSet = true;
-}
-
-qint32
-SWGAMDemodSettings::getCopyAudioToUdp() {
-    return copy_audio_to_udp;
-}
-void
-SWGAMDemodSettings::setCopyAudioToUdp(qint32 copy_audio_to_udp) {
-    this->copy_audio_to_udp = copy_audio_to_udp;
-    this->m_copy_audio_to_udp_isSet = true;
-}
-
-qint32
-SWGAMDemodSettings::getCopyAudioUseRtp() {
-    return copy_audio_use_rtp;
-}
-void
-SWGAMDemodSettings::setCopyAudioUseRtp(qint32 copy_audio_use_rtp) {
-    this->copy_audio_use_rtp = copy_audio_use_rtp;
-    this->m_copy_audio_use_rtp_isSet = true;
-}
-
-QString*
-SWGAMDemodSettings::getUdpAddress() {
-    return udp_address;
-}
-void
-SWGAMDemodSettings::setUdpAddress(QString* udp_address) {
-    this->udp_address = udp_address;
-    this->m_udp_address_isSet = true;
-}
-
-qint32
-SWGAMDemodSettings::getUdpPort() {
-    return udp_port;
-}
-void
-SWGAMDemodSettings::setUdpPort(qint32 udp_port) {
-    this->udp_port = udp_port;
-    this->m_udp_port_isSet = true;
 }
 
 qint32
@@ -337,6 +247,16 @@ SWGAMDemodSettings::setTitle(QString* title) {
     this->m_title_isSet = true;
 }
 
+QString*
+SWGAMDemodSettings::getAudioDeviceName() {
+    return audio_device_name;
+}
+void
+SWGAMDemodSettings::setAudioDeviceName(QString* audio_device_name) {
+    this->audio_device_name = audio_device_name;
+    this->m_audio_device_name_isSet = true;
+}
+
 
 bool
 SWGAMDemodSettings::isSet(){
@@ -346,15 +266,11 @@ SWGAMDemodSettings::isSet(){
         if(m_rf_bandwidth_isSet){ isObjectUpdated = true; break;}
         if(m_squelch_isSet){ isObjectUpdated = true; break;}
         if(m_volume_isSet){ isObjectUpdated = true; break;}
-        if(m_audio_sample_rate_isSet){ isObjectUpdated = true; break;}
         if(m_audio_mute_isSet){ isObjectUpdated = true; break;}
         if(m_bandpass_enable_isSet){ isObjectUpdated = true; break;}
-        if(m_copy_audio_to_udp_isSet){ isObjectUpdated = true; break;}
-        if(m_copy_audio_use_rtp_isSet){ isObjectUpdated = true; break;}
-        if(udp_address != nullptr && *udp_address != QString("")){ isObjectUpdated = true; break;}
-        if(m_udp_port_isSet){ isObjectUpdated = true; break;}
         if(m_rgb_color_isSet){ isObjectUpdated = true; break;}
         if(title != nullptr && *title != QString("")){ isObjectUpdated = true; break;}
+        if(audio_device_name != nullptr && *audio_device_name != QString("")){ isObjectUpdated = true; break;}
     }while(false);
     return isObjectUpdated;
 }

@@ -89,10 +89,34 @@ bool UDPSrcGUI::deserialize(const QByteArray& data)
     }
 }
 
-bool UDPSrcGUI::handleMessage(const Message& message __attribute__((unused)))
+bool UDPSrcGUI::handleMessage(const Message& message )
 {
-	qDebug() << "UDPSrcGUI::handleMessage";
-	return false;
+    if (UDPSrc::MsgConfigureUDPSrc::match(message))
+    {
+        const UDPSrc::MsgConfigureUDPSrc& cfg = (UDPSrc::MsgConfigureUDPSrc&) message;
+        m_settings = cfg.getSettings();
+        blockApplySettings(true);
+        displaySettings();
+        blockApplySettings(false);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void UDPSrcGUI::handleSourceMessages()
+{
+    Message* message;
+
+    while ((message = getInputMessageQueue()->pop()) != 0)
+    {
+        if (handleMessage(*message))
+        {
+            delete message;
+        }
+    }
 }
 
 void UDPSrcGUI::channelMarkerChangedByCursor()
@@ -150,6 +174,7 @@ UDPSrcGUI::UDPSrcGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, BasebandSam
 	m_spectrumVis = new SpectrumVis(SDR_RX_SCALEF, ui->glSpectrum);
 	m_udpSrc = (UDPSrc*) rxChannel; //new UDPSrc(m_deviceUISet->m_deviceSourceAPI);
 	m_udpSrc->setSpectrum(m_spectrumVis);
+	m_udpSrc->setMessageQueueToGUI(getInputMessageQueue());
 
 	ui->fmDeviation->setEnabled(false);
 
@@ -162,7 +187,13 @@ UDPSrcGUI::UDPSrcGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, BasebandSam
 	ui->glSpectrum->setSampleRate(ui->sampleRate->text().toInt());
 	ui->glSpectrum->setDisplayWaterfall(true);
 	ui->glSpectrum->setDisplayMaxHold(true);
-	m_spectrumVis->configure(m_spectrumVis->getInputMessageQueue(), 64, 10, FFTWindow::BlackmanHarris);
+	m_spectrumVis->configure(m_spectrumVis->getInputMessageQueue(),
+	        64, // FFT size
+	        10, // overlapping %
+	        0,  // number of averaging samples
+	        0,  // no averaging
+	        FFTWindow::BlackmanHarris,
+	        false); // logarithmic scale
 
 	ui->glSpectrum->connectTimer(MainWindow::getInstance()->getMasterTimer());
 	connect(&MainWindow::getInstance()->getMasterTimer(), SIGNAL(timeout()), this, SLOT(tick()));
@@ -171,9 +202,6 @@ UDPSrcGUI::UDPSrcGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, BasebandSam
 	m_channelMarker.setBandwidth(16000);
 	m_channelMarker.setCenterFrequency(0);
 	m_channelMarker.setTitle("UDP Sample Source");
-	m_channelMarker.setUDPAddress("127.0.0.1");
-	m_channelMarker.setUDPSendPort(9999);
-	m_channelMarker.setUDPReceivePort(9998);
     m_channelMarker.setColor(m_settings.m_rgbColor);
     m_channelMarker.blockSignals(false);
 	m_channelMarker.setVisible(true); // activate signal on the last setting only
@@ -189,6 +217,7 @@ UDPSrcGUI::UDPSrcGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, BasebandSam
 
 	connect(&m_channelMarker, SIGNAL(changedByCursor()), this, SLOT(channelMarkerChangedByCursor()));
     connect(&m_channelMarker, SIGNAL(highlightedByCursor()), this, SLOT(channelMarkerHighlightedByCursor()));
+    connect(getInputMessageQueue(), SIGNAL(messageEnqueued()), this, SLOT(handleSourceMessages()));
 
 	ui->spectrumGUI->setBuddies(m_spectrumVis->getInputMessageQueue(), m_spectrumVis, ui->glSpectrum);
 
@@ -221,12 +250,17 @@ void UDPSrcGUI::displaySettings()
 
     setTitleColor(m_settings.m_rgbColor);
     setWindowTitle(m_channelMarker.getTitle());
-    displayUDPAddress();
+
+    blockApplySettings(true);
 
     ui->deltaFrequency->setValue(m_channelMarker.getCenterFrequency());
 
     ui->sampleRate->setText(QString("%1").arg(m_settings.m_outputSampleRate, 0));
     setSampleFormatIndex(m_settings.m_sampleFormat);
+
+    ui->outputUDPAddress->setText(m_settings.m_udpAddress);
+    ui->outputUDPPort->setText(tr("%1").arg(m_settings.m_udpPort));
+    ui->inputUDPAudioPort->setText(tr("%1").arg(m_settings.m_audioPort));
 
     ui->squelch->setValue(m_settings.m_squelchdB);
     ui->squelchText->setText(tr("%1").arg(ui->squelch->value()*1.0, 0, 'f', 0));
@@ -248,49 +282,50 @@ void UDPSrcGUI::displaySettings()
     ui->gain->setValue(m_settings.m_gain*10.0);
     ui->gainText->setText(tr("%1").arg(ui->gain->value()/10.0, 0, 'f', 1));
 
+    ui->applyBtn->setEnabled(false);
+    ui->applyBtn->setStyleSheet("QPushButton { background:rgb(79,79,79); }");
+
+    blockApplySettings(false);
+
     ui->glSpectrum->setSampleRate(m_settings.m_outputSampleRate);
-
-    displayUDPAddress();
-}
-
-void UDPSrcGUI::displayUDPAddress()
-{
-    ui->addressText->setText(tr("%1:%2/%3").arg(m_channelMarker.getUDPAddress()).arg(m_channelMarker.getUDPSendPort()).arg(m_channelMarker.getUDPReceivePort()));
 }
 
 void UDPSrcGUI::setSampleFormatIndex(const UDPSrcSettings::SampleFormat& sampleFormat)
 {
     switch(sampleFormat)
     {
-        case UDPSrcSettings::FormatIQ:
+        case UDPSrcSettings::FormatIQ16:
             ui->sampleFormat->setCurrentIndex(0);
             break;
-        case UDPSrcSettings::FormatNFM:
+        case UDPSrcSettings::FormatIQ24:
             ui->sampleFormat->setCurrentIndex(1);
             break;
-        case UDPSrcSettings::FormatNFMMono:
+        case UDPSrcSettings::FormatNFM:
             ui->sampleFormat->setCurrentIndex(2);
             break;
-        case UDPSrcSettings::FormatLSB:
+        case UDPSrcSettings::FormatNFMMono:
             ui->sampleFormat->setCurrentIndex(3);
             break;
-        case UDPSrcSettings::FormatUSB:
+        case UDPSrcSettings::FormatLSB:
             ui->sampleFormat->setCurrentIndex(4);
             break;
-        case UDPSrcSettings::FormatLSBMono:
+        case UDPSrcSettings::FormatUSB:
             ui->sampleFormat->setCurrentIndex(5);
             break;
-        case UDPSrcSettings::FormatUSBMono:
+        case UDPSrcSettings::FormatLSBMono:
             ui->sampleFormat->setCurrentIndex(6);
             break;
-        case UDPSrcSettings::FormatAMMono:
+        case UDPSrcSettings::FormatUSBMono:
             ui->sampleFormat->setCurrentIndex(7);
             break;
-        case UDPSrcSettings::FormatAMNoDCMono:
+        case UDPSrcSettings::FormatAMMono:
             ui->sampleFormat->setCurrentIndex(8);
             break;
-        case UDPSrcSettings::FormatAMBPFMono:
+        case UDPSrcSettings::FormatAMNoDCMono:
             ui->sampleFormat->setCurrentIndex(9);
+            break;
+        case UDPSrcSettings::FormatAMBPFMono:
+            ui->sampleFormat->setCurrentIndex(10);
             break;
         default:
             ui->sampleFormat->setCurrentIndex(0);
@@ -303,47 +338,51 @@ void UDPSrcGUI::setSampleFormat(int index)
     switch(index)
     {
         case 0:
-            m_settings.m_sampleFormat = UDPSrcSettings::FormatIQ;
+            m_settings.m_sampleFormat = UDPSrcSettings::FormatIQ16;
             ui->fmDeviation->setEnabled(false);
             break;
         case 1:
+            m_settings.m_sampleFormat = UDPSrcSettings::FormatIQ24;
+            ui->fmDeviation->setEnabled(false);
+            break;
+        case 2:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatNFM;
             ui->fmDeviation->setEnabled(true);
             break;
-        case 2:
+        case 3:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatNFMMono;
             ui->fmDeviation->setEnabled(true);
             break;
-        case 3:
+        case 4:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatLSB;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 4:
+        case 5:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatUSB;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 5:
+        case 6:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatLSBMono;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 6:
+        case 7:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatUSBMono;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 7:
+        case 8:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatAMMono;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 8:
+        case 9:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatAMNoDCMono;
             ui->fmDeviation->setEnabled(false);
             break;
-        case 9:
+        case 10:
             m_settings.m_sampleFormat = UDPSrcSettings::FormatAMBPFMono;
             ui->fmDeviation->setEnabled(false);
             break;
         default:
-            m_settings.m_sampleFormat = UDPSrcSettings::FormatIQ;
+            m_settings.m_sampleFormat = UDPSrcSettings::FormatIQ16;
             ui->fmDeviation->setEnabled(false);
             break;
     }
@@ -395,13 +434,40 @@ void UDPSrcGUI::on_sampleFormat_currentIndexChanged(int index)
 	ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
 }
 
-void UDPSrcGUI::on_sampleSize_currentIndexChanged(int index)
+void UDPSrcGUI::on_outputUDPAddress_editingFinished()
 {
-    if ((index < 0) || (index >= UDPSrcSettings::SizeNone)) {
-        return;
+    m_settings.m_udpAddress = ui->outputUDPAddress->text();
+    ui->applyBtn->setEnabled(true);
+    ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
+}
+
+void UDPSrcGUI::on_outputUDPPort_editingFinished()
+{
+    bool ok;
+    quint16 udpPort = ui->outputUDPPort->text().toInt(&ok);
+
+    if((!ok) || (udpPort < 1024)) {
+        udpPort = 9998;
     }
 
-    m_settings.m_sampleSize = (UDPSrcSettings::SampleSize) index;
+    m_settings.m_udpPort = udpPort;
+    ui->outputUDPPort->setText(tr("%1").arg(m_settings.m_udpPort));
+
+    ui->applyBtn->setEnabled(true);
+    ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
+}
+
+void UDPSrcGUI::on_inputUDPAudioPort_editingFinished()
+{
+    bool ok;
+    quint16 udpPort = ui->inputUDPAudioPort->text().toInt(&ok);
+
+    if((!ok) || (udpPort < 1024)) {
+        udpPort = 9997;
+    }
+
+    m_settings.m_audioPort = udpPort;
+    ui->inputUDPAudioPort->setText(tr("%1").arg(m_settings.m_audioPort));
 
     ui->applyBtn->setEnabled(true);
     ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
@@ -552,14 +618,11 @@ void UDPSrcGUI::onMenuDialogCalled(const QPoint &p)
 
 
     m_settings.m_inputFrequencyOffset = m_channelMarker.getCenterFrequency();
-    m_settings.m_udpAddress = m_channelMarker.getUDPAddress(),
-    m_settings.m_udpPort =  m_channelMarker.getUDPSendPort(),
     m_settings.m_rgbColor = m_channelMarker.getColor().rgb();
     m_settings.m_title = m_channelMarker.getTitle();
 
     setWindowTitle(m_settings.m_title);
     setTitleColor(m_settings.m_rgbColor);
-    displayUDPAddress();
 
     applySettingsImmediate();
 }

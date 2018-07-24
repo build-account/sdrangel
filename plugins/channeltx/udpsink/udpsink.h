@@ -106,6 +106,20 @@ public:
     virtual QByteArray serialize() const;
     virtual bool deserialize(const QByteArray& data);
 
+    virtual int webapiSettingsGet(
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage);
+
+    virtual int webapiSettingsPutPatch(
+                bool force,
+                const QStringList& channelSettingsKeys,
+                SWGSDRangel::SWGChannelSettings& response,
+                QString& errorMessage);
+
+    virtual int webapiReportGet(
+                SWGSDRangel::SWGChannelReport& response,
+                QString& errorMessage);
+
     double getMagSq() const { return m_magsq; }
     double getInMagSq() const { return m_inMagsq; }
     int32_t getBufferGauge() const { return m_udpHandler.getBufferGauge(); }
@@ -225,6 +239,9 @@ private:
     void calculateLevel(Real sample);
     void calculateLevel(Complex sample);
 
+    void webapiFormatChannelSettings(SWGSDRangel::SWGChannelSettings& response, const UDPSinkSettings& settings);
+    void webapiFormatChannelReport(SWGSDRangel::SWGChannelReport& response);
+
     inline void calculateSquelch(double value)
     {
         if ((!m_settings.m_squelchEnabled) || (value > m_squelch))
@@ -283,14 +300,14 @@ private:
         }
     }
 
-    inline void readMonoSample(FixReal& t)
+    inline void readMonoSample(qint16& t)
     {
-        Sample s;
 
         if (m_settings.m_stereoInput)
         {
-            m_udpHandler.readSample(s);
-            t = ((s.m_real + s.m_imag) * m_settings.m_gainIn) / 2;
+            AudioSample a;
+            m_udpHandler.readSample(a);
+            t = ((a.l + a.r) * m_settings.m_gainIn) / 2;
         }
         else
         {

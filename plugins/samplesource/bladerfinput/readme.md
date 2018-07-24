@@ -28,7 +28,7 @@ Device start / stop button.
 
   - Blue triangle icon: device is ready and can be started
   - Green square icon: device is running and can be stopped
-  - Magenta (or pink) square icon: an error occured. In the case the device was accidentally disconnected you may click on the icon, plug back in and start again.
+  - Magenta (or pink) square icon: an error occurred. In the case the device was accidentally disconnected you may click on the icon, plug back in and start again.
   
 <h4>1.3: Record</h4>
 
@@ -62,19 +62,24 @@ This controls the optional XB-200 add-on when it is fitted to the BladeRF main b
 
 This is the BladeRF device ADC sample rate in S/s.
 
-Use the wheels to adjust the sample rate. Left click on a digit sets the cursor position at this digit. Right click on a digit sets all digits on the right to zero. This effectively floors value at the digit position. Wheels are moved with the mousewheel while pointing at the wheel or by selecting the wheel with the left mouse click and using the keyboard arroews. Pressing shift simultanoeusly moves digit by 5 and pressing control moves it by 2.
+Use the wheels to adjust the sample rate. Left click on a digit sets the cursor position at this digit. Right click on a digit sets all digits on the right to zero. This effectively floors value at the digit position. Wheels are moved with the mousewheel while pointing at the wheel or by selecting the wheel with the left mouse click and using the keyboard arrows. Pressing shift simultaneously moves digit by 5 and pressing control moves it by 2.
 
 <h3>5: Decimation factor</h3>
 
-The I/Q stream from the BladeRF ADC is doensampled by a power of two before being sent to the passband. Possible values are increasing powers of two: 1 (no decimation), 2, 4, 8, 16, 32.
+The I/Q stream from the BladeRF ADC is downsampled by a power of two before being sent to the passband. Possible values are increasing powers of two: 1 (no decimation), 2, 4, 8, 16, 32, 64.
 
 <h3>6: Baseband center frequency position relative the the BladeRF Rx center frequency</h3>
 
 Possible values are:
 
-  - **Cen**: the decimation operation takes place around the BladeRF Rx center frequency
-  - **Inf**: the decimation operation takes place around the center of the lower half of the BladeRF Rx passband. 
-  - **Sup**: the decimation operation takes place around the center of the upper half of the BladeRF Rx passband. 
+  - **Cen**: the decimation operation takes place around the BladeRF Rx center frequency Fs
+  - **Inf**: the decimation operation takes place around Fs - Fc. 
+  - **Sup**: the decimation operation takes place around Fs + Fc.
+  
+With SR as the sample rate before decimation Fc is calculated as: 
+
+  - if decimation n is 4 or lower:  Fc = SR/2^(log2(n)-1). The device center frequency is on the side of the baseband. You need a RF filter bandwidth at least twice the baseband.
+  - if decimation n is 8 or higher: Fc = SR/n. The device center frequency is half the baseband away from the side of the baseband. You need a RF filter bandwidth at least 3 times the baseband.
 
 <h3>7: Rx filter bandwidth</h3>
 

@@ -7,6 +7,7 @@ set(am_SOURCES
 	amdemodgui.cpp
 	amdemodsettings.cpp
 	amdemodplugin.cpp
+	amdemodssbdialog.cpp
 )
 
 set(am_HEADERS
@@ -14,10 +15,12 @@ set(am_HEADERS
 	amdemodgui.h
 	amdemodsettings.h
 	amdemodplugin.h
+	amdemodssbdialog.h
 )
 
 set(am_FORMS
 	amdemodgui.ui
+	amdemodssb.ui
 )
 
 include_directories(
@@ -46,6 +49,6 @@ target_link_libraries(demodam
 	sdrgui
 )
 
-qt5_use_modules(demodam Core Widgets)
+target_link_libraries(demodam Qt5::Core Qt5::Widgets)
 
 install(TARGETS demodam DESTINATION lib/plugins/channelrx)

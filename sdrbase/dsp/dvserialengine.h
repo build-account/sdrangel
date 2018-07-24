@@ -49,6 +49,7 @@ public:
             int mbeVolumeIndex,
             unsigned char channels,
             bool useHP,
+            int upsampling,
             AudioFifo *audioFifo);
 
 private:

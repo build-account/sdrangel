@@ -1,6 +1,6 @@
 /**
  * SDRangel
- * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Stopping instance i.e. /sdrangel with DELETE method is a server only feature. It allows stopping the instance nicely.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV demodulator, Channel Analyzer, Channel Analyzer NG, LoRa demodulator, TCP source   * The content type returned is always application/json except in the following cases:     * An incorrect URL was specified: this document is returned as text/html with a status 400    --- 
+ * This is the web REST/JSON API of SDRangel SDR software. SDRangel is an Open Source Qt5/OpenGL 3.0+ (4.3+ in Windows) GUI and server Software Defined Radio and signal analyzer in software. It supports Airspy, BladeRF, HackRF, LimeSDR, PlutoSDR, RTL-SDR, SDRplay RSP1 and FunCube     ---   Limitations and specifcities:       * In SDRangel GUI the first Rx device set cannot be deleted. Conversely the server starts with no device sets and its number of device sets can be reduced to zero by as many calls as necessary to /sdrangel/deviceset with DELETE method.   * Preset import and export from/to file is a server only feature.   * Device set focus is a GUI only feature.   * The following channels are not implemented (status 501 is returned): ATV and DATV demodulators, Channel Analyzer NG, LoRa demodulator   * The device settings and report structures contains only the sub-structure corresponding to the device type. The DeviceSettings and DeviceReport structures documented here shows all of them but only one will be or should be present at a time   * The channel settings and report structures contains only the sub-structure corresponding to the channel type. The ChannelSettings and ChannelReport structures documented here shows all of them but only one will be or should be present at a time    --- 
  *
  * OpenAPI spec version: 4.0.0
  * Contact: f4exb06@gmail.com
@@ -32,8 +32,18 @@ SWGDeviceSettings::SWGDeviceSettings() {
     m_device_hw_type_isSet = false;
     tx = 0;
     m_tx_isSet = false;
+    airspy_settings = nullptr;
+    m_airspy_settings_isSet = false;
     airspy_hf_settings = nullptr;
     m_airspy_hf_settings_isSet = false;
+    blade_rf_input_settings = nullptr;
+    m_blade_rf_input_settings_isSet = false;
+    blade_rf_output_settings = nullptr;
+    m_blade_rf_output_settings_isSet = false;
+    fcd_pro_settings = nullptr;
+    m_fcd_pro_settings_isSet = false;
+    fcd_pro_plus_settings = nullptr;
+    m_fcd_pro_plus_settings_isSet = false;
     file_source_settings = nullptr;
     m_file_source_settings_isSet = false;
     hack_rf_input_settings = nullptr;
@@ -44,8 +54,22 @@ SWGDeviceSettings::SWGDeviceSettings() {
     m_lime_sdr_input_settings_isSet = false;
     lime_sdr_output_settings = nullptr;
     m_lime_sdr_output_settings_isSet = false;
+    perseus_settings = nullptr;
+    m_perseus_settings_isSet = false;
+    pluto_sdr_input_settings = nullptr;
+    m_pluto_sdr_input_settings_isSet = false;
+    pluto_sdr_output_settings = nullptr;
+    m_pluto_sdr_output_settings_isSet = false;
     rtl_sdr_settings = nullptr;
     m_rtl_sdr_settings_isSet = false;
+    sdr_daemon_sink_settings = nullptr;
+    m_sdr_daemon_sink_settings_isSet = false;
+    sdr_daemon_source_settings = nullptr;
+    m_sdr_daemon_source_settings_isSet = false;
+    sdr_play_settings = nullptr;
+    m_sdr_play_settings_isSet = false;
+    test_source_settings = nullptr;
+    m_test_source_settings_isSet = false;
 }
 
 SWGDeviceSettings::~SWGDeviceSettings() {
@@ -58,8 +82,18 @@ SWGDeviceSettings::init() {
     m_device_hw_type_isSet = false;
     tx = 0;
     m_tx_isSet = false;
+    airspy_settings = new SWGAirspySettings();
+    m_airspy_settings_isSet = false;
     airspy_hf_settings = new SWGAirspyHFSettings();
     m_airspy_hf_settings_isSet = false;
+    blade_rf_input_settings = new SWGBladeRFInputSettings();
+    m_blade_rf_input_settings_isSet = false;
+    blade_rf_output_settings = new SWGBladeRFOutputSettings();
+    m_blade_rf_output_settings_isSet = false;
+    fcd_pro_settings = new SWGFCDProSettings();
+    m_fcd_pro_settings_isSet = false;
+    fcd_pro_plus_settings = new SWGFCDProPlusSettings();
+    m_fcd_pro_plus_settings_isSet = false;
     file_source_settings = new SWGFileSourceSettings();
     m_file_source_settings_isSet = false;
     hack_rf_input_settings = new SWGHackRFInputSettings();
@@ -70,8 +104,22 @@ SWGDeviceSettings::init() {
     m_lime_sdr_input_settings_isSet = false;
     lime_sdr_output_settings = new SWGLimeSdrOutputSettings();
     m_lime_sdr_output_settings_isSet = false;
+    perseus_settings = new SWGPerseusSettings();
+    m_perseus_settings_isSet = false;
+    pluto_sdr_input_settings = new SWGPlutoSdrInputSettings();
+    m_pluto_sdr_input_settings_isSet = false;
+    pluto_sdr_output_settings = new SWGPlutoSdrOutputSettings();
+    m_pluto_sdr_output_settings_isSet = false;
     rtl_sdr_settings = new SWGRtlSdrSettings();
     m_rtl_sdr_settings_isSet = false;
+    sdr_daemon_sink_settings = new SWGSDRdaemonSinkSettings();
+    m_sdr_daemon_sink_settings_isSet = false;
+    sdr_daemon_source_settings = new SWGSDRdaemonSourceSettings();
+    m_sdr_daemon_source_settings_isSet = false;
+    sdr_play_settings = new SWGSDRPlaySettings();
+    m_sdr_play_settings_isSet = false;
+    test_source_settings = new SWGTestSourceSettings();
+    m_test_source_settings_isSet = false;
 }
 
 void
@@ -80,8 +128,23 @@ SWGDeviceSettings::cleanup() {
         delete device_hw_type;
     }
 
+    if(airspy_settings != nullptr) { 
+        delete airspy_settings;
+    }
     if(airspy_hf_settings != nullptr) { 
         delete airspy_hf_settings;
+    }
+    if(blade_rf_input_settings != nullptr) { 
+        delete blade_rf_input_settings;
+    }
+    if(blade_rf_output_settings != nullptr) { 
+        delete blade_rf_output_settings;
+    }
+    if(fcd_pro_settings != nullptr) { 
+        delete fcd_pro_settings;
+    }
+    if(fcd_pro_plus_settings != nullptr) { 
+        delete fcd_pro_plus_settings;
     }
     if(file_source_settings != nullptr) { 
         delete file_source_settings;
@@ -98,8 +161,29 @@ SWGDeviceSettings::cleanup() {
     if(lime_sdr_output_settings != nullptr) { 
         delete lime_sdr_output_settings;
     }
+    if(perseus_settings != nullptr) { 
+        delete perseus_settings;
+    }
+    if(pluto_sdr_input_settings != nullptr) { 
+        delete pluto_sdr_input_settings;
+    }
+    if(pluto_sdr_output_settings != nullptr) { 
+        delete pluto_sdr_output_settings;
+    }
     if(rtl_sdr_settings != nullptr) { 
         delete rtl_sdr_settings;
+    }
+    if(sdr_daemon_sink_settings != nullptr) { 
+        delete sdr_daemon_sink_settings;
+    }
+    if(sdr_daemon_source_settings != nullptr) { 
+        delete sdr_daemon_source_settings;
+    }
+    if(sdr_play_settings != nullptr) { 
+        delete sdr_play_settings;
+    }
+    if(test_source_settings != nullptr) { 
+        delete test_source_settings;
     }
 }
 
@@ -118,7 +202,17 @@ SWGDeviceSettings::fromJsonObject(QJsonObject &pJson) {
     
     ::SWGSDRangel::setValue(&tx, pJson["tx"], "qint32", "");
     
+    ::SWGSDRangel::setValue(&airspy_settings, pJson["airspySettings"], "SWGAirspySettings", "SWGAirspySettings");
+    
     ::SWGSDRangel::setValue(&airspy_hf_settings, pJson["airspyHFSettings"], "SWGAirspyHFSettings", "SWGAirspyHFSettings");
+    
+    ::SWGSDRangel::setValue(&blade_rf_input_settings, pJson["bladeRFInputSettings"], "SWGBladeRFInputSettings", "SWGBladeRFInputSettings");
+    
+    ::SWGSDRangel::setValue(&blade_rf_output_settings, pJson["bladeRFOutputSettings"], "SWGBladeRFOutputSettings", "SWGBladeRFOutputSettings");
+    
+    ::SWGSDRangel::setValue(&fcd_pro_settings, pJson["fcdProSettings"], "SWGFCDProSettings", "SWGFCDProSettings");
+    
+    ::SWGSDRangel::setValue(&fcd_pro_plus_settings, pJson["fcdProPlusSettings"], "SWGFCDProPlusSettings", "SWGFCDProPlusSettings");
     
     ::SWGSDRangel::setValue(&file_source_settings, pJson["fileSourceSettings"], "SWGFileSourceSettings", "SWGFileSourceSettings");
     
@@ -130,7 +224,21 @@ SWGDeviceSettings::fromJsonObject(QJsonObject &pJson) {
     
     ::SWGSDRangel::setValue(&lime_sdr_output_settings, pJson["limeSdrOutputSettings"], "SWGLimeSdrOutputSettings", "SWGLimeSdrOutputSettings");
     
+    ::SWGSDRangel::setValue(&perseus_settings, pJson["perseusSettings"], "SWGPerseusSettings", "SWGPerseusSettings");
+    
+    ::SWGSDRangel::setValue(&pluto_sdr_input_settings, pJson["plutoSdrInputSettings"], "SWGPlutoSdrInputSettings", "SWGPlutoSdrInputSettings");
+    
+    ::SWGSDRangel::setValue(&pluto_sdr_output_settings, pJson["plutoSdrOutputSettings"], "SWGPlutoSdrOutputSettings", "SWGPlutoSdrOutputSettings");
+    
     ::SWGSDRangel::setValue(&rtl_sdr_settings, pJson["rtlSdrSettings"], "SWGRtlSdrSettings", "SWGRtlSdrSettings");
+    
+    ::SWGSDRangel::setValue(&sdr_daemon_sink_settings, pJson["sdrDaemonSinkSettings"], "SWGSDRdaemonSinkSettings", "SWGSDRdaemonSinkSettings");
+    
+    ::SWGSDRangel::setValue(&sdr_daemon_source_settings, pJson["sdrDaemonSourceSettings"], "SWGSDRdaemonSourceSettings", "SWGSDRdaemonSourceSettings");
+    
+    ::SWGSDRangel::setValue(&sdr_play_settings, pJson["sdrPlaySettings"], "SWGSDRPlaySettings", "SWGSDRPlaySettings");
+    
+    ::SWGSDRangel::setValue(&test_source_settings, pJson["testSourceSettings"], "SWGTestSourceSettings", "SWGTestSourceSettings");
     
 }
 
@@ -154,8 +262,23 @@ SWGDeviceSettings::asJsonObject() {
     if(m_tx_isSet){
         obj->insert("tx", QJsonValue(tx));
     }
+    if((airspy_settings != nullptr) && (airspy_settings->isSet())){
+        toJsonValue(QString("airspySettings"), airspy_settings, obj, QString("SWGAirspySettings"));
+    }
     if((airspy_hf_settings != nullptr) && (airspy_hf_settings->isSet())){
         toJsonValue(QString("airspyHFSettings"), airspy_hf_settings, obj, QString("SWGAirspyHFSettings"));
+    }
+    if((blade_rf_input_settings != nullptr) && (blade_rf_input_settings->isSet())){
+        toJsonValue(QString("bladeRFInputSettings"), blade_rf_input_settings, obj, QString("SWGBladeRFInputSettings"));
+    }
+    if((blade_rf_output_settings != nullptr) && (blade_rf_output_settings->isSet())){
+        toJsonValue(QString("bladeRFOutputSettings"), blade_rf_output_settings, obj, QString("SWGBladeRFOutputSettings"));
+    }
+    if((fcd_pro_settings != nullptr) && (fcd_pro_settings->isSet())){
+        toJsonValue(QString("fcdProSettings"), fcd_pro_settings, obj, QString("SWGFCDProSettings"));
+    }
+    if((fcd_pro_plus_settings != nullptr) && (fcd_pro_plus_settings->isSet())){
+        toJsonValue(QString("fcdProPlusSettings"), fcd_pro_plus_settings, obj, QString("SWGFCDProPlusSettings"));
     }
     if((file_source_settings != nullptr) && (file_source_settings->isSet())){
         toJsonValue(QString("fileSourceSettings"), file_source_settings, obj, QString("SWGFileSourceSettings"));
@@ -172,8 +295,29 @@ SWGDeviceSettings::asJsonObject() {
     if((lime_sdr_output_settings != nullptr) && (lime_sdr_output_settings->isSet())){
         toJsonValue(QString("limeSdrOutputSettings"), lime_sdr_output_settings, obj, QString("SWGLimeSdrOutputSettings"));
     }
+    if((perseus_settings != nullptr) && (perseus_settings->isSet())){
+        toJsonValue(QString("perseusSettings"), perseus_settings, obj, QString("SWGPerseusSettings"));
+    }
+    if((pluto_sdr_input_settings != nullptr) && (pluto_sdr_input_settings->isSet())){
+        toJsonValue(QString("plutoSdrInputSettings"), pluto_sdr_input_settings, obj, QString("SWGPlutoSdrInputSettings"));
+    }
+    if((pluto_sdr_output_settings != nullptr) && (pluto_sdr_output_settings->isSet())){
+        toJsonValue(QString("plutoSdrOutputSettings"), pluto_sdr_output_settings, obj, QString("SWGPlutoSdrOutputSettings"));
+    }
     if((rtl_sdr_settings != nullptr) && (rtl_sdr_settings->isSet())){
         toJsonValue(QString("rtlSdrSettings"), rtl_sdr_settings, obj, QString("SWGRtlSdrSettings"));
+    }
+    if((sdr_daemon_sink_settings != nullptr) && (sdr_daemon_sink_settings->isSet())){
+        toJsonValue(QString("sdrDaemonSinkSettings"), sdr_daemon_sink_settings, obj, QString("SWGSDRdaemonSinkSettings"));
+    }
+    if((sdr_daemon_source_settings != nullptr) && (sdr_daemon_source_settings->isSet())){
+        toJsonValue(QString("sdrDaemonSourceSettings"), sdr_daemon_source_settings, obj, QString("SWGSDRdaemonSourceSettings"));
+    }
+    if((sdr_play_settings != nullptr) && (sdr_play_settings->isSet())){
+        toJsonValue(QString("sdrPlaySettings"), sdr_play_settings, obj, QString("SWGSDRPlaySettings"));
+    }
+    if((test_source_settings != nullptr) && (test_source_settings->isSet())){
+        toJsonValue(QString("testSourceSettings"), test_source_settings, obj, QString("SWGTestSourceSettings"));
     }
 
     return obj;
@@ -199,6 +343,16 @@ SWGDeviceSettings::setTx(qint32 tx) {
     this->m_tx_isSet = true;
 }
 
+SWGAirspySettings*
+SWGDeviceSettings::getAirspySettings() {
+    return airspy_settings;
+}
+void
+SWGDeviceSettings::setAirspySettings(SWGAirspySettings* airspy_settings) {
+    this->airspy_settings = airspy_settings;
+    this->m_airspy_settings_isSet = true;
+}
+
 SWGAirspyHFSettings*
 SWGDeviceSettings::getAirspyHfSettings() {
     return airspy_hf_settings;
@@ -207,6 +361,46 @@ void
 SWGDeviceSettings::setAirspyHfSettings(SWGAirspyHFSettings* airspy_hf_settings) {
     this->airspy_hf_settings = airspy_hf_settings;
     this->m_airspy_hf_settings_isSet = true;
+}
+
+SWGBladeRFInputSettings*
+SWGDeviceSettings::getBladeRfInputSettings() {
+    return blade_rf_input_settings;
+}
+void
+SWGDeviceSettings::setBladeRfInputSettings(SWGBladeRFInputSettings* blade_rf_input_settings) {
+    this->blade_rf_input_settings = blade_rf_input_settings;
+    this->m_blade_rf_input_settings_isSet = true;
+}
+
+SWGBladeRFOutputSettings*
+SWGDeviceSettings::getBladeRfOutputSettings() {
+    return blade_rf_output_settings;
+}
+void
+SWGDeviceSettings::setBladeRfOutputSettings(SWGBladeRFOutputSettings* blade_rf_output_settings) {
+    this->blade_rf_output_settings = blade_rf_output_settings;
+    this->m_blade_rf_output_settings_isSet = true;
+}
+
+SWGFCDProSettings*
+SWGDeviceSettings::getFcdProSettings() {
+    return fcd_pro_settings;
+}
+void
+SWGDeviceSettings::setFcdProSettings(SWGFCDProSettings* fcd_pro_settings) {
+    this->fcd_pro_settings = fcd_pro_settings;
+    this->m_fcd_pro_settings_isSet = true;
+}
+
+SWGFCDProPlusSettings*
+SWGDeviceSettings::getFcdProPlusSettings() {
+    return fcd_pro_plus_settings;
+}
+void
+SWGDeviceSettings::setFcdProPlusSettings(SWGFCDProPlusSettings* fcd_pro_plus_settings) {
+    this->fcd_pro_plus_settings = fcd_pro_plus_settings;
+    this->m_fcd_pro_plus_settings_isSet = true;
 }
 
 SWGFileSourceSettings*
@@ -259,6 +453,36 @@ SWGDeviceSettings::setLimeSdrOutputSettings(SWGLimeSdrOutputSettings* lime_sdr_o
     this->m_lime_sdr_output_settings_isSet = true;
 }
 
+SWGPerseusSettings*
+SWGDeviceSettings::getPerseusSettings() {
+    return perseus_settings;
+}
+void
+SWGDeviceSettings::setPerseusSettings(SWGPerseusSettings* perseus_settings) {
+    this->perseus_settings = perseus_settings;
+    this->m_perseus_settings_isSet = true;
+}
+
+SWGPlutoSdrInputSettings*
+SWGDeviceSettings::getPlutoSdrInputSettings() {
+    return pluto_sdr_input_settings;
+}
+void
+SWGDeviceSettings::setPlutoSdrInputSettings(SWGPlutoSdrInputSettings* pluto_sdr_input_settings) {
+    this->pluto_sdr_input_settings = pluto_sdr_input_settings;
+    this->m_pluto_sdr_input_settings_isSet = true;
+}
+
+SWGPlutoSdrOutputSettings*
+SWGDeviceSettings::getPlutoSdrOutputSettings() {
+    return pluto_sdr_output_settings;
+}
+void
+SWGDeviceSettings::setPlutoSdrOutputSettings(SWGPlutoSdrOutputSettings* pluto_sdr_output_settings) {
+    this->pluto_sdr_output_settings = pluto_sdr_output_settings;
+    this->m_pluto_sdr_output_settings_isSet = true;
+}
+
 SWGRtlSdrSettings*
 SWGDeviceSettings::getRtlSdrSettings() {
     return rtl_sdr_settings;
@@ -269,6 +493,46 @@ SWGDeviceSettings::setRtlSdrSettings(SWGRtlSdrSettings* rtl_sdr_settings) {
     this->m_rtl_sdr_settings_isSet = true;
 }
 
+SWGSDRdaemonSinkSettings*
+SWGDeviceSettings::getSdrDaemonSinkSettings() {
+    return sdr_daemon_sink_settings;
+}
+void
+SWGDeviceSettings::setSdrDaemonSinkSettings(SWGSDRdaemonSinkSettings* sdr_daemon_sink_settings) {
+    this->sdr_daemon_sink_settings = sdr_daemon_sink_settings;
+    this->m_sdr_daemon_sink_settings_isSet = true;
+}
+
+SWGSDRdaemonSourceSettings*
+SWGDeviceSettings::getSdrDaemonSourceSettings() {
+    return sdr_daemon_source_settings;
+}
+void
+SWGDeviceSettings::setSdrDaemonSourceSettings(SWGSDRdaemonSourceSettings* sdr_daemon_source_settings) {
+    this->sdr_daemon_source_settings = sdr_daemon_source_settings;
+    this->m_sdr_daemon_source_settings_isSet = true;
+}
+
+SWGSDRPlaySettings*
+SWGDeviceSettings::getSdrPlaySettings() {
+    return sdr_play_settings;
+}
+void
+SWGDeviceSettings::setSdrPlaySettings(SWGSDRPlaySettings* sdr_play_settings) {
+    this->sdr_play_settings = sdr_play_settings;
+    this->m_sdr_play_settings_isSet = true;
+}
+
+SWGTestSourceSettings*
+SWGDeviceSettings::getTestSourceSettings() {
+    return test_source_settings;
+}
+void
+SWGDeviceSettings::setTestSourceSettings(SWGTestSourceSettings* test_source_settings) {
+    this->test_source_settings = test_source_settings;
+    this->m_test_source_settings_isSet = true;
+}
+
 
 bool
 SWGDeviceSettings::isSet(){
@@ -276,13 +540,25 @@ SWGDeviceSettings::isSet(){
     do{
         if(device_hw_type != nullptr && *device_hw_type != QString("")){ isObjectUpdated = true; break;}
         if(m_tx_isSet){ isObjectUpdated = true; break;}
+        if(airspy_settings != nullptr && airspy_settings->isSet()){ isObjectUpdated = true; break;}
         if(airspy_hf_settings != nullptr && airspy_hf_settings->isSet()){ isObjectUpdated = true; break;}
+        if(blade_rf_input_settings != nullptr && blade_rf_input_settings->isSet()){ isObjectUpdated = true; break;}
+        if(blade_rf_output_settings != nullptr && blade_rf_output_settings->isSet()){ isObjectUpdated = true; break;}
+        if(fcd_pro_settings != nullptr && fcd_pro_settings->isSet()){ isObjectUpdated = true; break;}
+        if(fcd_pro_plus_settings != nullptr && fcd_pro_plus_settings->isSet()){ isObjectUpdated = true; break;}
         if(file_source_settings != nullptr && file_source_settings->isSet()){ isObjectUpdated = true; break;}
         if(hack_rf_input_settings != nullptr && hack_rf_input_settings->isSet()){ isObjectUpdated = true; break;}
         if(hack_rf_output_settings != nullptr && hack_rf_output_settings->isSet()){ isObjectUpdated = true; break;}
         if(lime_sdr_input_settings != nullptr && lime_sdr_input_settings->isSet()){ isObjectUpdated = true; break;}
         if(lime_sdr_output_settings != nullptr && lime_sdr_output_settings->isSet()){ isObjectUpdated = true; break;}
+        if(perseus_settings != nullptr && perseus_settings->isSet()){ isObjectUpdated = true; break;}
+        if(pluto_sdr_input_settings != nullptr && pluto_sdr_input_settings->isSet()){ isObjectUpdated = true; break;}
+        if(pluto_sdr_output_settings != nullptr && pluto_sdr_output_settings->isSet()){ isObjectUpdated = true; break;}
         if(rtl_sdr_settings != nullptr && rtl_sdr_settings->isSet()){ isObjectUpdated = true; break;}
+        if(sdr_daemon_sink_settings != nullptr && sdr_daemon_sink_settings->isSet()){ isObjectUpdated = true; break;}
+        if(sdr_daemon_source_settings != nullptr && sdr_daemon_source_settings->isSet()){ isObjectUpdated = true; break;}
+        if(sdr_play_settings != nullptr && sdr_play_settings->isSet()){ isObjectUpdated = true; break;}
+        if(test_source_settings != nullptr && test_source_settings->isSet()){ isObjectUpdated = true; break;}
     }while(false);
     return isObjectUpdated;
 }

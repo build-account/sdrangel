@@ -22,7 +22,17 @@
 #include "ui_glscopenggui.h"
 #include "util/simpleserializer.h"
 
-const double GLScopeNGGUI::amps[11] = { 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001 };
+const double GLScopeNGGUI::amps[27] = {
+        2e-1, 1e-1, 5e-2,
+        2e-2, 1e-2, 5e-3,
+        2e-3, 1e-3, 5e-4,
+        2e-4, 1e-4, 5e-5,
+        2e-5, 1e-5, 5e-6,
+        2e-6, 1e-6, 5e-7,
+        2e-7, 1e-7, 5e-8,
+        2e-8, 1e-8, 5e-9,
+        2e-9, 1e-9, 5e-10,
+};
 
 GLScopeNGGUI::GLScopeNGGUI(QWidget* parent) :
     QWidget(parent),
@@ -422,6 +432,12 @@ void GLScopeNGGUI::on_onlyX_toggled(bool checked)
         ui->polar->setChecked(false);
         m_glScope->setDisplayMode(GLScopeNG::DisplayX);
     }
+    else
+    {
+        if (!ui->onlyY->isChecked() && !ui->horizontalXY->isChecked() && !ui->verticalXY->isChecked() && !ui->polar->isChecked()) {
+            ui->polar->setChecked(true);
+        }
+    }
 }
 
 void GLScopeNGGUI::on_onlyY_toggled(bool checked)
@@ -433,6 +449,12 @@ void GLScopeNGGUI::on_onlyY_toggled(bool checked)
         ui->verticalXY->setChecked(false);
         ui->polar->setChecked(false);
         m_glScope->setDisplayMode(GLScopeNG::DisplayY);
+    }
+    else
+    {
+        if (!ui->onlyX->isChecked() && !ui->horizontalXY->isChecked() && !ui->verticalXY->isChecked() && !ui->polar->isChecked()) {
+            ui->polar->setChecked(true);
+        }
     }
 }
 
@@ -446,6 +468,12 @@ void GLScopeNGGUI::on_horizontalXY_toggled(bool checked)
         ui->polar->setChecked(false);
         m_glScope->setDisplayMode(GLScopeNG::DisplayXYH);
     }
+    else
+    {
+        if (!ui->onlyX->isChecked() && !ui->onlyY->isChecked() && !ui->verticalXY->isChecked() && !ui->polar->isChecked()) {
+            ui->polar->setChecked(true);
+        }
+    }
 }
 
 void GLScopeNGGUI::on_verticalXY_toggled(bool checked)
@@ -457,6 +485,12 @@ void GLScopeNGGUI::on_verticalXY_toggled(bool checked)
         ui->horizontalXY->setChecked(false);
         ui->polar->setChecked(false);
         m_glScope->setDisplayMode(GLScopeNG::DisplayXYV);
+    }
+    else
+    {
+        if (!ui->onlyX->isChecked() && !ui->onlyY->isChecked() && !ui->horizontalXY->isChecked() && !ui->polar->isChecked()) {
+            ui->polar->setChecked(true);
+        }
     }
 }
 
@@ -470,6 +504,17 @@ void GLScopeNGGUI::on_polar_toggled(bool checked)
         ui->verticalXY->setChecked(false);
         m_glScope->setDisplayMode(GLScopeNG::DisplayPol);
     }
+    else
+    {
+        if (!ui->onlyX->isChecked() && !ui->onlyY->isChecked() && !ui->horizontalXY->isChecked() && !ui->verticalXY->isChecked()) {
+            ui->polar->setChecked(true);
+        }
+    }
+}
+
+void GLScopeNGGUI::on_polarPoints_toggled(bool checked)
+{
+    m_glScope->setDisplayXYPoints(checked);
 }
 
 void GLScopeNGGUI::on_traceIntensity_valueChanged(int value)
@@ -711,7 +756,7 @@ void GLScopeNGGUI::on_traceView_toggled(bool checked __attribute__((unused)))
 
 void GLScopeNGGUI::on_traceColor_clicked()
 {
-    QColor newColor = QColorDialog::getColor(m_focusedTraceColor);
+    QColor newColor = QColorDialog::getColor(m_focusedTraceColor, this, tr("Select Color for trace"), QColorDialog::DontUseNativeDialog);
 
     if (newColor.isValid()) // user clicked OK and selected a color
     {
@@ -810,7 +855,7 @@ void GLScopeNGGUI::on_trigPre_valueChanged(int value __attribute__((unused)))
 
 void GLScopeNGGUI::on_trigColor_clicked()
 {
-    QColor newColor = QColorDialog::getColor(m_focusedTriggerColor);
+    QColor newColor = QColorDialog::getColor(m_focusedTriggerColor, this, tr("Select Color for trigger line"), QColorDialog::DontUseNativeDialog);
 
     if (newColor.isValid()) // user clicked "OK"
     {
@@ -944,10 +989,10 @@ void GLScopeNGGUI::setTimeOfsDisplay()
 
 void GLScopeNGGUI::setAmpScaleDisplay()
 {
-    ScopeVisNG::ProjectionType projectionType = (ScopeVisNG::ProjectionType) ui->traceMode->currentIndex();
+    Projector::ProjectionType projectionType = (Projector::ProjectionType) ui->traceMode->currentIndex();
     double ampValue = amps[ui->amp->value()];
 
-    if (projectionType == ScopeVisNG::ProjectionMagDB)
+    if (projectionType == Projector::ProjectionMagDB)
     {
         double displayValue = ampValue*500.0f;
 
@@ -975,10 +1020,10 @@ void GLScopeNGGUI::setAmpScaleDisplay()
 
 void GLScopeNGGUI::setAmpOfsDisplay()
 {
-    ScopeVisNG::ProjectionType projectionType = (ScopeVisNG::ProjectionType) ui->traceMode->currentIndex();
+    Projector::ProjectionType projectionType = (Projector::ProjectionType) ui->traceMode->currentIndex();
     double o = (ui->ofsCoarse->value() * 10.0f) + (ui->ofsFine->value() / 20.0f);
 
-    if (projectionType == ScopeVisNG::ProjectionMagDB)
+    if (projectionType == Projector::ProjectionMagDB)
     {
         ui->ofsText->setText(tr("%1\ndB").arg(o/10.0f - 100.0f, 0, 'f', 1));
     }
@@ -986,7 +1031,7 @@ void GLScopeNGGUI::setAmpOfsDisplay()
     {
         double a;
 
-        if (projectionType == ScopeVisNG::ProjectionMagLin)
+        if ((projectionType == Projector::ProjectionMagLin) || (projectionType == Projector::ProjectionMagSq))
         {
             a = o/2000.0f;
         }
@@ -995,12 +1040,14 @@ void GLScopeNGGUI::setAmpOfsDisplay()
             a = o/1000.0f;
         }
 
-        if(fabs(a) < 0.000001f)
-            ui->ofsText->setText(tr("%1\nn").arg(a * 1000000000.0));
-        else if(fabs(a) < 0.001f)
-            ui->ofsText->setText(tr("%1\nµ").arg(a * 1000000.0));
+        if(fabs(a) < 1e-9)
+            ui->ofsText->setText(tr("%1\np").arg(a * 1e12));
+        else if(fabs(a) < 1e-6)
+            ui->ofsText->setText(tr("%1\nn").arg(a * 1e9));
+        else if(fabs(a) < 1e-3)
+            ui->ofsText->setText(tr("%1\nµ").arg(a * 1e6));
         else if(fabs(a) < 1.0f)
-            ui->ofsText->setText(tr("%1\nm").arg(a * 1000.0));
+            ui->ofsText->setText(tr("%1\nm").arg(a * 1e3));
         else
             ui->ofsText->setText(tr("%1").arg(a * 1.0));
     }
@@ -1039,20 +1086,20 @@ void GLScopeNGGUI::setTrigIndexDisplay()
 
 void GLScopeNGGUI::setTrigLevelDisplay()
 {
-    double t = (ui->trigLevelCoarse->value() / 100.0f) + (ui->trigLevelFine->value() / 20000.0f);
-    ScopeVisNG::ProjectionType projectionType = (ScopeVisNG::ProjectionType) ui->trigMode->currentIndex();
+    double t = (ui->trigLevelCoarse->value() / 100.0f) + (ui->trigLevelFine->value() / 50000.0f);
+    Projector::ProjectionType projectionType = (Projector::ProjectionType) ui->trigMode->currentIndex();
 
     ui->trigLevelCoarse->setToolTip(QString("Trigger level coarse: %1 %").arg(ui->trigLevelCoarse->value() / 100.0f));
-    ui->trigLevelFine->setToolTip(QString("Trigger level fine: %1 ppm").arg(ui->trigLevelFine->value() * 50));
+    ui->trigLevelFine->setToolTip(QString("Trigger level fine: %1 ppm").arg(ui->trigLevelFine->value() * 20));
 
-    if (projectionType == ScopeVisNG::ProjectionMagDB) {
+    if (projectionType == Projector::ProjectionMagDB) {
         ui->trigLevelText->setText(tr("%1\ndB").arg(100.0 * (t - 1.0), 0, 'f', 1));
     }
     else
     {
         double a;
 
-        if (projectionType == ScopeVisNG::ProjectionMagLin) {
+        if ((projectionType == Projector::ProjectionMagLin) || (projectionType == Projector::ProjectionMagSq)) {
             a = 1.0 + t;
         } else {
             a = t;
@@ -1146,12 +1193,17 @@ void GLScopeNGGUI::changeCurrentTrigger()
 
 void GLScopeNGGUI::fillProjectionCombo(QComboBox* comboBox)
 {
-    comboBox->addItem("Real", ScopeVisNG::ProjectionReal);
-    comboBox->addItem("Imag", ScopeVisNG::ProjectionImag);
-    comboBox->addItem("Mag", ScopeVisNG::ProjectionMagLin);
-    comboBox->addItem("MagdB", ScopeVisNG::ProjectionMagDB);
-    comboBox->addItem("Phi", ScopeVisNG::ProjectionPhase);
-    comboBox->addItem("dPhi", ScopeVisNG::ProjectionDPhase);
+    comboBox->addItem("Real", Projector::ProjectionReal);
+    comboBox->addItem("Imag", Projector::ProjectionImag);
+    comboBox->addItem("Mag", Projector::ProjectionMagLin);
+    comboBox->addItem("MagSq", Projector::ProjectionMagSq);
+    comboBox->addItem("MagdB", Projector::ProjectionMagDB);
+    comboBox->addItem("Phi", Projector::ProjectionPhase);
+    comboBox->addItem("dPhi", Projector::ProjectionDPhase);
+    comboBox->addItem("BPSK", Projector::ProjectionBPSK);
+    comboBox->addItem("QPSK", Projector::ProjectionQPSK);
+    comboBox->addItem("8PSK", Projector::Projection8PSK);
+    comboBox->addItem("16PSK", Projector::Projection16PSK);
 }
 
 void GLScopeNGGUI::disableLiveMode(bool disable)
@@ -1176,8 +1228,8 @@ void GLScopeNGGUI::disableLiveMode(bool disable)
 
 void GLScopeNGGUI::fillTraceData(ScopeVisNG::TraceData& traceData)
 {
-    traceData.m_projectionType = (ScopeVisNG::ProjectionType) ui->traceMode->currentIndex();
-    traceData.m_hasTextOverlay = (traceData.m_projectionType == ScopeVisNG::ProjectionMagDB);
+    traceData.m_projectionType = (Projector::ProjectionType) ui->traceMode->currentIndex();
+    traceData.m_hasTextOverlay = (traceData.m_projectionType == Projector::ProjectionMagDB) || (traceData.m_projectionType == Projector::ProjectionMagSq);
     traceData.m_textOverlay.clear();
     traceData.m_inputIndex = 0;
     traceData.m_amp = 0.2 / amps[ui->amp->value()];
@@ -1186,7 +1238,7 @@ void GLScopeNGGUI::fillTraceData(ScopeVisNG::TraceData& traceData)
     traceData.m_ofsCoarse = ui->ofsCoarse->value();
     traceData.m_ofsFine = ui->ofsFine->value();
 
-    if (traceData.m_projectionType == ScopeVisNG::ProjectionMagLin) {
+    if ((traceData.m_projectionType == Projector::ProjectionMagLin)  || (traceData.m_projectionType == Projector::ProjectionMagSq)) {
         traceData.m_ofs = ((10.0 * ui->ofsCoarse->value()) + (ui->ofsFine->value() / 20.0)) / 2000.0f;
     } else {
         traceData.m_ofs = ((10.0 * ui->ofsCoarse->value()) + (ui->ofsFine->value() / 20.0)) / 1000.0f;
@@ -1201,9 +1253,9 @@ void GLScopeNGGUI::fillTraceData(ScopeVisNG::TraceData& traceData)
 
 void GLScopeNGGUI::fillTriggerData(ScopeVisNG::TriggerData& triggerData)
 {
-    triggerData.m_projectionType = (ScopeVisNG::ProjectionType) ui->trigMode->currentIndex();
+    triggerData.m_projectionType = (Projector::ProjectionType) ui->trigMode->currentIndex();
     triggerData.m_inputIndex = 0;
-    triggerData.m_triggerLevel = (ui->trigLevelCoarse->value() / 100.0) + (ui->trigLevelFine->value() / 20000.0);
+    triggerData.m_triggerLevel = (ui->trigLevelCoarse->value() / 100.0) + (ui->trigLevelFine->value() / 50000.0);
     triggerData.m_triggerLevelCoarse = ui->trigLevelCoarse->value();
     triggerData.m_triggerLevelFine = ui->trigLevelFine->value();
     triggerData.m_triggerPositiveEdge = ui->trigPos->isChecked();

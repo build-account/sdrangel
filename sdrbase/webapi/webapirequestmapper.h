@@ -52,6 +52,10 @@ private:
     void instanceChannelsService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void instanceLoggingService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void instanceAudioService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
+    void instanceAudioInputParametersService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
+    void instanceAudioOutputParametersService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
+    void instanceAudioInputCleanupService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
+    void instanceAudioOutputCleanupService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void instanceLocationService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void instanceDVSerialService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void instancePresetsService(qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
@@ -65,6 +69,7 @@ private:
     void devicesetDeviceService(const std::string& indexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void devicesetDeviceSettingsService(const std::string& indexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void devicesetDeviceRunService(const std::string& indexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
+    void devicesetDeviceReportService(const std::string& indexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void devicesetChannelsReportService(const std::string& deviceSetIndexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void devicesetChannelService(const std::string& deviceSetIndexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
     void devicesetChannelIndexService(const std::string& deviceSetIndexStr, const std::string& channelIndexStr, qtwebapp::HttpRequest& request, qtwebapp::HttpResponse& response);
@@ -77,7 +82,8 @@ private:
     bool validateDeviceListItem(SWGSDRangel::SWGDeviceListItem& deviceListItem, QJsonObject& jsonObject);
     bool validateDeviceSettings(SWGSDRangel::SWGDeviceSettings& deviceSettings, QJsonObject& jsonObject, QStringList& deviceSettingsKeys);
     bool validateChannelSettings(SWGSDRangel::SWGChannelSettings& deviceSettings, QJsonObject& jsonObject, QStringList& channelSettingsKeys);
-    bool validateChannelReport(SWGSDRangel::SWGChannelReport& deviceReport, QJsonObject& jsonObject, QStringList& channelReportKeys);
+    bool validateAudioInputDevice(SWGSDRangel::SWGAudioInputDevice& audioInputDevice, QJsonObject& jsonObject, QStringList& audioInputDeviceKeys);
+    bool validateAudioOutputDevice(SWGSDRangel::SWGAudioOutputDevice& audioOutputDevice, QJsonObject& jsonObject, QStringList& audioOutputDeviceKeys);
 
     void appendSettingsSubKeys(
             const QJsonObject& parentSettingsJsonObject,
@@ -88,8 +94,11 @@ private:
     bool parseJsonBody(QString& jsonStr, QJsonObject& jsonObject, qtwebapp::HttpResponse& response);
 
     void resetDeviceSettings(SWGSDRangel::SWGDeviceSettings& deviceSettings);
+    void resetDeviceReport(SWGSDRangel::SWGDeviceReport& deviceReport);
     void resetChannelSettings(SWGSDRangel::SWGChannelSettings& deviceSettings);
     void resetChannelReport(SWGSDRangel::SWGChannelReport& deviceSettings);
+    void resetAudioInputDevice(SWGSDRangel::SWGAudioInputDevice& audioInputDevice);
+    void resetAudioOutputDevice(SWGSDRangel::SWGAudioOutputDevice& audioOutputDevice);
 };
 
 #endif /* SDRBASE_WEBAPI_WEBAPIREQUESTMAPPER_H_ */

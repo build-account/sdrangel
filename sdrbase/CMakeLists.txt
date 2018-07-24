@@ -3,6 +3,7 @@ project (sdrbase)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 
 set(sdrbase_SOURCES
+    audio/audiocompressor.cpp
     audio/audiodevicemanager.cpp
     audio/audiofifo.cpp
     audio/audiooutput.cpp
@@ -21,23 +22,29 @@ set(sdrbase_SOURCES
     dsp/ctcssdetector.cpp
     dsp/cwkeyer.cpp
     dsp/cwkeyersettings.cpp
-    dsp/decimatorsf.cpp
+    dsp/decimatorsif.cpp    
+    dsp/decimatorsff.cpp
+    dsp/decimatorsfi.cpp
     dsp/dspcommands.cpp
     dsp/dspengine.cpp
     dsp/dspdevicesourceengine.cpp
     dsp/dspdevicesinkengine.cpp
+    dsp/fftcorr.cpp
     dsp/fftengine.cpp
-    dsp/fftfilt.cxx
+    dsp/fftfilt.cpp
     dsp/fftwindow.cpp
     dsp/filterrc.cpp
     dsp/filtermbe.cpp
     dsp/filerecord.cpp
+    dsp/freqlockcomplex.cpp
     dsp/interpolator.cpp
     dsp/hbfiltertraits.cpp
     dsp/lowpass.cpp
     dsp/nco.cpp
     dsp/ncof.cpp
     dsp/phaselock.cpp
+    dsp/phaselockcomplex.cpp
+    dsp/projector.cpp
     dsp/samplesinkfifo.cpp
     dsp/samplesourcefifo.cpp
     dsp/samplesinkfifodoublebuffered.cpp
@@ -84,6 +91,7 @@ set(sdrbase_SOURCES
 )
 
 set(sdrbase_HEADERS
+	audio/audiocompressor.h
     audio/audiodevicemanager.h
     audio/audiofifo.h
     audio/audiooutput.h
@@ -103,7 +111,9 @@ set(sdrbase_HEADERS
     dsp/cwkeyer.h
     dsp/cwkeyersettings.h
     dsp/decimators.h
-    dsp/decimatorsf.h
+    dsp/decimatorsif.h
+    dsp/decimatorsff.h
+    dsp/decimatorsfi.h
     dsp/decimatorsu.h
     dsp/interpolators.h
     dsp/dspcommands.h
@@ -111,6 +121,7 @@ set(sdrbase_HEADERS
     dsp/dspdevicesourceengine.h
     dsp/dspdevicesinkengine.h
     dsp/dsptypes.h
+    dsp/fftcorr.h
     dsp/fftengine.h
     dsp/fftfilt.h
     dsp/fftwengine.h
@@ -118,6 +129,7 @@ set(sdrbase_HEADERS
     dsp/filterrc.h
     dsp/filtermbe.h
     dsp/filerecord.h
+    dsp/freqlockcomplex.h
     dsp/gfft.h
     dsp/iirfilter.h
     dsp/interpolator.h
@@ -125,8 +137,11 @@ set(sdrbase_HEADERS
     dsp/inthalfbandfilter.h
     dsp/inthalfbandfilterdb.h
     dsp/inthalfbandfilterdbf.h
-    dsp/inthalfbandfiltereo1.h
-    dsp/inthalfbandfiltereo1i.h
+    dsp/inthalfbandfiltereo.h
+    # dsp/inthalfbandfiltereo1.h
+    # dsp/inthalfbandfiltereo1i.h
+    # dsp/inthalfbandfiltereo2.h
+    dsp/inthalfbandfiltereof.h
     dsp/inthalfbandfilterst.h
     dsp/inthalfbandfiltersti.h
     dsp/kissfft.h
@@ -138,6 +153,8 @@ set(sdrbase_HEADERS
     dsp/ncof.h
     dsp/phasediscri.h
     dsp/phaselock.h
+    dsp/phaselockcomplex.h
+    dsp/projector.h
     dsp/recursivefilters.h
     dsp/samplesinkfifo.h
     dsp/samplesourcefifo.h
@@ -168,7 +185,7 @@ set(sdrbase_HEADERS
     util/CRC64.h
     util/db.h
     util/doublebuffer.h
-    #export.h
+    util/doublebufferfifo.h
     util/fixedtraits.h
     util/message.h
     util/messagequeue.h
@@ -286,7 +303,7 @@ endif (BUILD_DEBIAN)
 set_target_properties(sdrbase PROPERTIES DEFINE_SYMBOL "sdrbase_EXPORTS")
 target_compile_features(sdrbase PRIVATE cxx_generalized_initializers) # cmake >= 3.1.0
 
-qt5_use_modules(sdrbase Core Multimedia)
+target_link_libraries(sdrbase Qt5::Core Qt5::Multimedia)
 
 install(TARGETS sdrbase DESTINATION lib)
 

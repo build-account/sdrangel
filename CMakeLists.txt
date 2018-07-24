@@ -30,6 +30,7 @@ option(DEBUG_OUTPUT "Print debug messages" OFF)
 option(SANITIZE_ADDRESS "Activate memory address sanitization" OFF)
 option(HOST_RPI "Compiling on RPi" OFF)
 option(RX_SAMPLE_24BIT "Internal 24 bit Rx DSP" OFF)
+option(NO_DSP_SIMD "Do not use SIMD instructions for DSP even if available" OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
@@ -55,7 +56,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core 5.0 REQUIRED)
 find_package(Qt5Widgets 5.0 REQUIRED)
 find_package(Qt5Multimedia 5.0 REQUIRED)
-#find_package(QT5OpenGL 5.0 REQUIRED)
+find_package(Qt5OpenGL 5.0 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig)
 find_package(Boost REQUIRED)
@@ -203,6 +204,13 @@ if (SANITIZE_ADDRESS)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fsanitize=address")
 endif()
 
+if (NO_DSP_SIMD)
+    message(STATUS "Not compiling with SIMD instructions for DSP even if available")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNO_DSP_SIMD")
+else()
+    message(STATUS "Compiling with SIMD instructions for DSP if available")
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wvla -Woverloaded-virtual -ffast-math -ftree-vectorize ${EXTRA_FLAGS}")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -214,6 +222,7 @@ endif()
 add_subdirectory(sdrbase)
 add_subdirectory(sdrgui)
 add_subdirectory(sdrsrv)
+add_subdirectory(sdrbench)
 add_subdirectory(httpserver)
 add_subdirectory(logging)
 add_subdirectory(qrtplib)
@@ -243,7 +252,7 @@ set(sdrangel_SOURCES
 )
 
 if(WIN32)
-    SET(sdrangel_SOURCES ${sdrangel_SOURCES} sdrbase/resources/sdrangel.rc)
+    SET(sdrangel_SOURCES ${sdrangel_SOURCES} sdrgui/resources/sdrangel.rc)
 endif(WIN32)
 
 add_executable(sdrangel
@@ -267,7 +276,7 @@ if(WIN32)
     set_target_properties(sdrangel PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 endif(WIN32)
 
-qt5_use_modules(sdrangel Widgets Multimedia)
+target_link_libraries(sdrangel Qt5::Widgets Qt5::Multimedia)
 
 ##############################################################################
 # main server application
@@ -291,7 +300,31 @@ target_link_libraries(sdrangelsrv
     ${QT_LIBRARIES}
 )
 
-qt5_use_modules(sdrangelsrv Multimedia)
+target_link_libraries(sdrangelsrv Qt5::Multimedia)
+
+##############################################################################
+# main benchmark application
+
+set(sdrangelbench_SOURCES
+    appbench/main.cpp
+)
+
+add_executable(sdrangelbench
+    ${sdrangelbench_SOURCES}
+)
+
+target_include_directories(sdrangelbench
+    PUBLIC ${CMAKE_SOURCE_DIR}/sdrbench
+)
+
+target_link_libraries(sdrangelbench
+    sdrbench
+    logging
+    ${QT_LIBRARIES}
+)
+
+target_compile_features(sdrangelbench PRIVATE cxx_generalized_initializers) # cmake >= 3.1.0
+target_link_libraries(sdrangelbench Qt5::Multimedia)
 
 ##############################################################################
 
@@ -325,6 +358,7 @@ endif(LIBUSB_FOUND AND UNIX)
 #install targets
 install(TARGETS sdrangel DESTINATION bin)
 install(TARGETS sdrangelsrv DESTINATION bin)
+install(TARGETS sdrangelbench DESTINATION bin)
 #install(TARGETS sdrbase DESTINATION lib)
 
 #install files and directories

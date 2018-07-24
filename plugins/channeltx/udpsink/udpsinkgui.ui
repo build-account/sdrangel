@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>388</width>
+    <width>382</width>
     <height>403</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>342</width>
+    <width>382</width>
     <height>0</height>
    </size>
   </property>
@@ -24,18 +24,18 @@
   </property>
   <property name="font">
    <font>
-    <family>Sans Serif</family>
+    <family>Liberation Sans</family>
     <pointsize>9</pointsize>
    </font>
   </property>
   <property name="windowTitle">
    <string>UDP Sample Sink</string>
   </property>
-  <property name="toolTipDuration">
-   <number>-1</number>
-  </property>
   <property name="statusTip">
    <string>UDP Sample Sink</string>
+  </property>
+  <property name="toolTipDuration" stdset="0">
+   <number>-1</number>
   </property>
   <widget class="QWidget" name="widget" native="true">
    <property name="geometry">
@@ -56,16 +56,7 @@
     <string>Settings</string>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="leftMargin">
-     <number>2</number>
-    </property>
-    <property name="topMargin">
-     <number>2</number>
-    </property>
-    <property name="rightMargin">
-     <number>2</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>2</number>
     </property>
     <property name="spacing">
@@ -92,7 +83,7 @@
          <string>Input sample rate (S/s)</string>
         </property>
         <property name="inputMask">
-         <string>0009999</string>
+         <string>0009999; </string>
         </property>
         <property name="text">
          <string>48000</string>
@@ -122,7 +113,7 @@
          <string>Signal bandwidth (Hz)</string>
         </property>
         <property name="inputMask">
-         <string>0009999</string>
+         <string>0009999; </string>
         </property>
         <property name="text">
          <string>32000</string>
@@ -207,6 +198,12 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>Liberation Mono</family>
+          <pointsize>8</pointsize>
+         </font>
         </property>
         <property name="toolTip">
          <string>Amplitude meter in % of maximum</string>
@@ -506,7 +503,7 @@
          <string>FM deviation in Hz</string>
         </property>
         <property name="inputMask">
-         <string>00000</string>
+         <string>00000; </string>
         </property>
         <property name="text">
          <string>2500</string>
@@ -532,7 +529,7 @@
          <string>Percentage of AM modulation</string>
         </property>
         <property name="inputMask">
-         <string>000</string>
+         <string>000; </string>
         </property>
         <property name="text">
          <string>95</string>
@@ -618,6 +615,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="channelMute">
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
         <property name="toolTip">
          <string>Mute/Unmute channel (green when on air)</string>
         </property>
@@ -670,7 +670,7 @@
         </property>
         <property name="font">
          <font>
-          <family>DejaVu Sans Mono</family>
+          <family>Liberation Mono</family>
           <pointsize>12</pointsize>
          </font>
         </property>
@@ -779,7 +779,42 @@
     <item row="2" column="0">
      <layout class="QHBoxLayout" name="AddressLayout">
       <item>
-       <widget class="QLabel" name="addresslabel">
+       <widget class="QLabel" name="localUDPAddressLabel">
+        <property name="text">
+         <string>A</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="localUDPAddress">
+        <property name="minimumSize">
+         <size>
+          <width>110</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>110</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Local UDP address</string>
+        </property>
+        <property name="inputMask">
+         <string>000.000.000.000; </string>
+        </property>
+        <property name="text">
+         <string>127.0.0.1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="addressSeparator">
         <property name="maximumSize">
          <size>
           <width>35</width>
@@ -787,25 +822,53 @@
          </size>
         </property>
         <property name="text">
-         <string>Addr</string>
+         <string>:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="addressText">
+       <widget class="QLineEdit" name="localUDPPort">
         <property name="minimumSize">
          <size>
-          <width>150</width>
+          <width>50</width>
           <height>0</height>
          </size>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
         <property name="toolTip">
-         <string>Receiving UDP address and port</string>
+         <string>Local UDP port</string>
+        </property>
+        <property name="inputMask">
+         <string>00000; </string>
         </property>
         <property name="text">
-         <string>000.000.000.000:00000</string>
+         <string>9998</string>
         </property>
        </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </item>
@@ -834,7 +897,7 @@
         </property>
         <item>
          <property name="text">
-          <string>S16LE I/Q</string>
+          <string>SnLE I/Q</string>
          </property>
         </item>
         <item>
@@ -897,23 +960,14 @@
     <property name="spacing">
      <number>3</number>
     </property>
-    <property name="leftMargin">
-     <number>2</number>
-    </property>
-    <property name="topMargin">
-     <number>2</number>
-    </property>
-    <property name="rightMargin">
-     <number>2</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>2</number>
     </property>
     <item>
      <widget class="GLSpectrum" name="glSpectrum" native="true">
       <property name="font">
        <font>
-        <family>Sans Serif</family>
+        <family>Liberation Mono</family>
         <pointsize>9</pointsize>
        </font>
       </property>

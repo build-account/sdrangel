@@ -83,10 +83,21 @@ bool UDPSinkGUI::deserialize(const QByteArray& data)
     }
 }
 
-bool UDPSinkGUI::handleMessage(const Message& message __attribute__((unused)))
+bool UDPSinkGUI::handleMessage(const Message& message)
 {
-    qDebug() << "UDPSinkGUI::handleMessage";
-    return false;
+    if (UDPSink::MsgConfigureUDPSink::match(message))
+    {
+        const UDPSink::MsgConfigureUDPSink& cfg = (UDPSink::MsgConfigureUDPSink&) message;
+        m_settings = cfg.getSettings();
+        blockApplySettings(true);
+        displaySettings();
+        blockApplySettings(false);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void UDPSinkGUI::handleSourceMessages()
@@ -131,7 +142,13 @@ UDPSinkGUI::UDPSinkGUI(PluginAPI* pluginAPI, DeviceUISet *deviceUISet, BasebandS
     ui->glSpectrum->setSampleRate(ui->sampleRate->text().toInt());
     ui->glSpectrum->setDisplayWaterfall(true);
     ui->glSpectrum->setDisplayMaxHold(true);
-    m_spectrumVis->configure(m_spectrumVis->getInputMessageQueue(), 64, 10, FFTWindow::BlackmanHarris);
+    m_spectrumVis->configure(m_spectrumVis->getInputMessageQueue(),
+            64, // FFT size
+            10, // overlapping %
+            0,  // number of averaging samples
+            0,  // no averaging
+            FFTWindow::BlackmanHarris,
+            false); // logarithmic scale
 
     ui->glSpectrum->connectTimer(MainWindow::getInstance()->getMasterTimer());
     connect(&MainWindow::getInstance()->getMasterTimer(), SIGNAL(timeout()), this, SLOT(tick()));
@@ -194,8 +211,6 @@ void UDPSinkGUI::displaySettings()
     m_channelMarker.blockSignals(true);
     m_channelMarker.setCenterFrequency(m_settings.m_inputFrequencyOffset);
     m_channelMarker.setBandwidth(m_settings.m_rfBandwidth);
-    m_channelMarker.setUDPAddress(m_settings.m_udpAddress);
-    m_channelMarker.setUDPReceivePort(m_settings.m_udpPort); // activate signal on the last setting only
     m_channelMarker.blockSignals(false);
     m_channelMarker.setColor(m_settings.m_rgbColor);
 
@@ -234,7 +249,11 @@ void UDPSinkGUI::displaySettings()
     ui->squelchGateText->setText(tr("%1").arg(roundf(m_settings.m_squelchGate * 1000.0), 0, 'f', 0));
     ui->squelchGate->setValue(roundf(m_settings.m_squelchGate * 100.0));
 
-    ui->addressText->setText(tr("%1:%2").arg(m_settings.m_udpAddress).arg(m_settings.m_udpPort));
+    ui->localUDPAddress->setText(m_settings.m_udpAddress);
+    ui->localUDPPort->setText(tr("%1").arg(m_settings.m_udpPort));
+
+    ui->applyBtn->setEnabled(false);
+    ui->applyBtn->setStyleSheet("QPushButton { background:rgb(79,79,79); }");
 
     blockApplySettings(false);
 }
@@ -268,6 +287,29 @@ void UDPSinkGUI::on_sampleFormat_currentIndexChanged(int index)
     }
 
     setSampleFormat(index);
+
+    ui->applyBtn->setEnabled(true);
+    ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
+}
+
+void UDPSinkGUI::on_localUDPAddress_editingFinished()
+{
+    m_settings.m_udpAddress = ui->localUDPAddress->text();
+    ui->applyBtn->setEnabled(true);
+    ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
+}
+
+void UDPSinkGUI::on_localUDPPort_editingFinished()
+{
+    bool ok;
+    quint16 udpPort = ui->localUDPPort->text().toInt(&ok);
+
+    if((!ok) || (udpPort < 1024)) {
+        udpPort = 9998;
+    }
+
+    m_settings.m_udpPort = udpPort;
+    ui->localUDPPort->setText(tr("%1").arg(m_settings.m_udpPort));
 
     ui->applyBtn->setEnabled(true);
     ui->applyBtn->setStyleSheet("QPushButton { background-color : green; }");
@@ -429,13 +471,10 @@ void UDPSinkGUI::onMenuDialogCalled(const QPoint &p)
     dialog.exec();
 
     m_settings.m_inputFrequencyOffset = m_channelMarker.getCenterFrequency();
-    m_settings.m_udpAddress = m_channelMarker.getUDPAddress(),
-    m_settings.m_udpPort =  m_channelMarker.getUDPReceivePort(),
     m_settings.m_rgbColor = m_channelMarker.getColor().rgb();
 
     setWindowTitle(m_channelMarker.getTitle());
     setTitleColor(m_settings.m_rgbColor);
-    ui->addressText->setText(tr("%1:%2").arg(m_settings.m_udpAddress).arg(m_settings.m_udpPort));
 
     applySettings();
 }
@@ -482,7 +521,7 @@ void UDPSinkGUI::setSampleFormatIndex(const UDPSinkSettings::SampleFormat& sampl
 {
     switch(sampleFormat)
     {
-        case UDPSinkSettings::FormatS16LE:
+        case UDPSinkSettings::FormatSnLE:
             ui->sampleFormat->setCurrentIndex(0);
             ui->fmDeviation->setEnabled(false);
             ui->stereoInput->setChecked(true);
@@ -522,7 +561,7 @@ void UDPSinkGUI::setSampleFormat(int index)
     switch(index)
     {
     case 0:
-        m_settings.m_sampleFormat = UDPSinkSettings::FormatS16LE;
+        m_settings.m_sampleFormat = UDPSinkSettings::FormatSnLE;
         ui->fmDeviation->setEnabled(false);
         ui->stereoInput->setChecked(true);
         ui->stereoInput->setEnabled(false);
@@ -548,7 +587,7 @@ void UDPSinkGUI::setSampleFormat(int index)
         ui->stereoInput->setEnabled(true);
         break;
     default:
-        m_settings.m_sampleFormat = UDPSinkSettings::FormatS16LE;
+        m_settings.m_sampleFormat = UDPSinkSettings::FormatSnLE;
         ui->fmDeviation->setEnabled(false);
         ui->stereoInput->setChecked(true);
         ui->stereoInput->setEnabled(false);

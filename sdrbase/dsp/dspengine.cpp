@@ -26,8 +26,6 @@
 DSPEngine::DSPEngine() :
     m_deviceSourceEnginesUIDSequence(0),
     m_deviceSinkEnginesUIDSequence(0),
-	m_audioOutputSampleRate(48000), // Use default output device at 48 kHz
-    m_audioInputSampleRate(48000),  // Use default input device at 48 kHz
     m_audioInputDeviceIndex(-1),    // default device
     m_audioOutputDeviceIndex(-1)    // default device
 {
@@ -37,9 +35,6 @@ DSPEngine::DSPEngine() :
 
 DSPEngine::~DSPEngine()
 {
-    m_audioOutput.setOnExit(true);
-    m_audioInput.setOnExit(true);
-
     std::vector<DSPDeviceSourceEngine*>::iterator it = m_deviceSourceEngines.begin();
 
     while (it != m_deviceSourceEngines.end())
@@ -169,9 +164,10 @@ void DSPEngine::pushMbeFrame(
         int mbeVolumeIndex,
         unsigned char channels,
         bool useHP,
+        int upsampling,
         AudioFifo *audioFifo)
 {
-    m_dvSerialEngine.pushMbeFrame(mbeFrame, mbeRateIndex, mbeVolumeIndex, channels, useHP, audioFifo);
+    m_dvSerialEngine.pushMbeFrame(mbeFrame, mbeRateIndex, mbeVolumeIndex, channels, useHP, upsampling, audioFifo);
 }
 #else
 void DSPEngine::pushMbeFrame(
@@ -180,6 +176,7 @@ void DSPEngine::pushMbeFrame(
         int mbeVolumeIndex __attribute((unused)),
         unsigned char channels __attribute((unused)),
         bool useHP __attribute((unused)),
+        int upsampling __attribute((unused)),
         AudioFifo *audioFifo __attribute((unused)))
 {}
 #endif

@@ -22,6 +22,8 @@
 #include "SWGDeviceSettings.h"
 #include "SWGRtlSdrSettings.h"
 #include "SWGDeviceState.h"
+#include "SWGDeviceReport.h"
+#include "SWGRtlSdrReport.h"
 
 #include "rtlsdrinput.h"
 #include "device/devicesourceapi.h"
@@ -53,9 +55,7 @@ RTLSDRInput::RTLSDRInput(DeviceSourceAPI *deviceAPI) :
 {
     openDevice();
 
-    char recFileNameCStr[30];
-    sprintf(recFileNameCStr, "test_%d.sdriq", m_deviceAPI->getDeviceUID());
-    m_fileSink = new FileRecord(std::string(recFileNameCStr));
+    m_fileSink = new FileRecord(QString("test_%1.sdriq").arg(m_deviceAPI->getDeviceUID()));
     m_deviceAPI->addSink(m_fileSink);
 }
 
@@ -306,9 +306,18 @@ bool RTLSDRInput::handleMessage(const Message& message)
         MsgFileRecord& conf = (MsgFileRecord&) message;
         qDebug() << "RTLSDRInput::handleMessage: MsgFileRecord: " << conf.getStartStop();
 
-        if (conf.getStartStop()) {
+        if (conf.getStartStop())
+        {
+            if (m_settings.m_fileRecordName.size() != 0) {
+                m_fileSink->setFileName(m_settings.m_fileRecordName);
+            } else {
+                m_fileSink->genUniqueFileName(m_deviceAPI->getDeviceUID());
+            }
+
             m_fileSink->startRecording();
-        } else {
+        }
+        else
+        {
             m_fileSink->stopRecording();
         }
 
@@ -433,72 +442,51 @@ bool RTLSDRInput::applySettings(const RTLSDRSettings& settings, bool force)
     if ((m_settings.m_centerFrequency != settings.m_centerFrequency)
         || (m_settings.m_fcPos != settings.m_fcPos)
         || (m_settings.m_log2Decim != settings.m_log2Decim)
+        || (m_settings.m_devSampleRate != settings.m_devSampleRate)
         || (m_settings.m_transverterMode != settings.m_transverterMode)
         || (m_settings.m_transverterDeltaFrequency != settings.m_transverterDeltaFrequency) || force)
     {
+        qint64 deviceCenterFrequency = DeviceSampleSource::calculateDeviceCenterFrequency(
+                settings.m_centerFrequency,
+                settings.m_transverterDeltaFrequency,
+                settings.m_log2Decim,
+                (DeviceSampleSource::fcPos_t) settings.m_fcPos,
+                settings.m_devSampleRate,
+                settings.m_transverterMode);
+
         m_settings.m_centerFrequency = settings.m_centerFrequency;
+        m_settings.m_log2Decim = settings.m_log2Decim;
+        m_settings.m_devSampleRate = settings.m_devSampleRate;
         m_settings.m_transverterMode = settings.m_transverterMode;
         m_settings.m_transverterDeltaFrequency = settings.m_transverterDeltaFrequency;
-        m_settings.m_log2Decim = settings.m_log2Decim;
-        qint64 deviceCenterFrequency = m_settings.m_centerFrequency;
-        deviceCenterFrequency -= m_settings.m_transverterMode ? m_settings.m_transverterDeltaFrequency : 0;
-        deviceCenterFrequency = deviceCenterFrequency < 0 ? 0 : deviceCenterFrequency;
-        qint64 f_img = deviceCenterFrequency;
-        quint32 devSampleRate = m_settings.m_devSampleRate;
 
         forwardChange = true;
 
-        if ((m_settings.m_log2Decim == 0) || (settings.m_fcPos == RTLSDRSettings::FC_POS_CENTER))
+        if ((m_settings.m_fcPos != settings.m_fcPos) || force)
         {
-            f_img = deviceCenterFrequency;
-        }
-        else
-        {
-            if (settings.m_fcPos == RTLSDRSettings::FC_POS_INFRA)
-            {
-                deviceCenterFrequency += (devSampleRate / 4);
-                f_img = deviceCenterFrequency + devSampleRate/2;
+            m_settings.m_fcPos = settings.m_fcPos;
+
+            if (m_rtlSDRThread != 0) {
+                m_rtlSDRThread->setFcPos((int) m_settings.m_fcPos);
             }
-            else if (settings.m_fcPos == RTLSDRSettings::FC_POS_SUPRA)
-            {
-                deviceCenterFrequency -= (devSampleRate / 4);
-                f_img = deviceCenterFrequency - devSampleRate/2;
-            }
+
+            qDebug() << "RTLSDRInput::applySettings: set fc pos (enum) to " << (int) m_settings.m_fcPos;
         }
 
         if (m_dev != 0)
         {
-            if (rtlsdr_set_center_freq( m_dev, deviceCenterFrequency ) != 0)
-            {
-                qDebug("rtlsdr_set_center_freq(%lld) failed", deviceCenterFrequency);
-            }
-            else
-            {
-                qDebug() << "RTLSDRInput::applySettings: center freq: " << m_settings.m_centerFrequency << " Hz"
-                        << " device center freq: " << deviceCenterFrequency << " Hz"
-                        << " device sample rate: " << devSampleRate << "S/s"
-                        << " Actual sample rate: " << devSampleRate/(1<<m_settings.m_log2Decim) << "S/s"
-                        << " img: " << f_img << "Hz";
+            if (rtlsdr_set_center_freq( m_dev, deviceCenterFrequency ) != 0) {
+                qWarning("RTLSDRInput::applySettings: rtlsdr_set_center_freq(%lld) failed", deviceCenterFrequency);
+            } else {
+                qDebug("RTLSDRInput::applySettings: rtlsdr_set_center_freq(%lld)", deviceCenterFrequency);
             }
         }
-    }
-
-    if ((m_settings.m_fcPos != settings.m_fcPos) || force)
-    {
-        m_settings.m_fcPos = settings.m_fcPos;
-
-        if (m_rtlSDRThread != 0)
-        {
-            m_rtlSDRThread->setFcPos((int) m_settings.m_fcPos);
-        }
-
-        qDebug() << "RTLSDRInput: set fc pos (enum) to " << (int) m_settings.m_fcPos;
     }
 
     if ((m_settings.m_noModMode != settings.m_noModMode) || force)
     {
         m_settings.m_noModMode = settings.m_noModMode;
-        qDebug() << "RTLSDRInput: set noModMode to " << m_settings.m_noModMode;
+        qDebug() << "RTLSDRInput::applySettings: set noModMode to " << m_settings.m_noModMode;
 
         // Direct Modes: 0: off, 1: I, 2: Q, 3: NoMod.
         if (m_settings.m_noModMode) {
@@ -601,6 +589,9 @@ int RTLSDRInput::webapiSettingsPutPatch(
     if (deviceSettingsKeys.contains("rfBandwidth")) {
         settings.m_rfBandwidth = response.getRtlSdrSettings()->getRfBandwidth() != 0;
     }
+    if (deviceSettingsKeys.contains("fileRecordName")) {
+        settings.m_fileRecordName = *response.getRtlSdrSettings()->getFileRecordName();
+    }
 
     MsgConfigureRTLSDR *msg = MsgConfigureRTLSDR::create(settings, force);
     m_inputMessageQueue.push(msg);
@@ -631,6 +622,12 @@ void RTLSDRInput::webapiFormatDeviceSettings(SWGSDRangel::SWGDeviceSettings& res
     response.getRtlSdrSettings()->setTransverterDeltaFrequency(settings.m_transverterDeltaFrequency);
     response.getRtlSdrSettings()->setTransverterMode(settings.m_transverterMode ? 1 : 0);
     response.getRtlSdrSettings()->setRfBandwidth(settings.m_rfBandwidth);
+
+    if (response.getRtlSdrSettings()->getFileRecordName()) {
+        *response.getRtlSdrSettings()->getFileRecordName() = settings.m_fileRecordName;
+    } else {
+        response.getRtlSdrSettings()->setFileRecordName(new QString(settings.m_fileRecordName));
+    }
 }
 
 int RTLSDRInput::webapiRunGet(
@@ -658,3 +655,26 @@ int RTLSDRInput::webapiRun(
 
     return 200;
 }
+
+int RTLSDRInput::webapiReportGet(
+        SWGSDRangel::SWGDeviceReport& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setRtlSdrReport(new SWGSDRangel::SWGRtlSdrReport());
+    response.getRtlSdrReport()->init();
+    webapiFormatDeviceReport(response);
+    return 200;
+}
+
+void RTLSDRInput::webapiFormatDeviceReport(SWGSDRangel::SWGDeviceReport& response)
+{
+    response.getRtlSdrReport()->setGains(new QList<SWGSDRangel::SWGGain*>);
+
+    for (std::vector<int>::const_iterator it = getGains().begin(); it != getGains().end(); ++it)
+    {
+        response.getRtlSdrReport()->getGains()->append(new SWGSDRangel::SWGGain);
+        response.getRtlSdrReport()->getGains()->back()->setGainCb(*it);
+    }
+}
+
+

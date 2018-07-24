@@ -20,6 +20,8 @@
 
 #include "SWGDeviceSettings.h"
 #include "SWGDeviceState.h"
+#include "SWGDeviceReport.h"
+#include "SWGAirspyHFReport.h"
 
 #include <device/devicesourceapi.h>
 #include <dsp/filerecord.h>
@@ -28,7 +30,6 @@
 
 #include "airspyhfinput.h"
 
-#include "airspyhfgui.h"
 #include "airspyhfplugin.h"
 #include "airspyhfsettings.h"
 #include "airspyhfthread.h"
@@ -51,10 +52,7 @@ AirspyHFInput::AirspyHFInput(DeviceSourceAPI *deviceAPI) :
 	m_running(false)
 {
     openDevice();
-
-    char recFileNameCStr[30];
-    sprintf(recFileNameCStr, "test_%d.sdriq", m_deviceAPI->getDeviceUID());
-    m_fileSink = new FileRecord(std::string(recFileNameCStr));
+    m_fileSink = new FileRecord(QString("test_%1.sdriq").arg(m_deviceAPI->getDeviceUID()));
     m_deviceAPI->addSink(m_fileSink);
 }
 
@@ -156,13 +154,7 @@ bool AirspyHFInput::start()
 
     if (m_running) { stop(); }
 
-	if ((m_airspyHFThread = new AirspyHFThread(m_dev, &m_sampleFifo)) == 0)
-	{
-	    qCritical("AirspyHFInput::start: out of memory");
-		stop();
-		return false;
-	}
-
+	m_airspyHFThread = new AirspyHFThread(m_dev, &m_sampleFifo);
 	int sampleRateIndex = m_settings.m_devSampleRateIndex;
 
     if (m_settings.m_devSampleRateIndex >= m_sampleRates.size()) {
@@ -324,9 +316,18 @@ bool AirspyHFInput::handleMessage(const Message& message)
         MsgFileRecord& conf = (MsgFileRecord&) message;
         qDebug() << "AirspyHFInput::handleMessage: MsgFileRecord: " << conf.getStartStop();
 
-        if (conf.getStartStop()) {
+        if (conf.getStartStop())
+        {
+            if (m_settings.m_fileRecordName.size() != 0) {
+                m_fileSink->setFileName(m_settings.m_fileRecordName);
+            } else {
+                m_fileSink->genUniqueFileName(m_deviceAPI->getDeviceUID());
+            }
+
             m_fileSink->startRecording();
-        } else {
+        }
+        else
+        {
             m_fileSink->stopRecording();
         }
 
@@ -522,6 +523,9 @@ int AirspyHFInput::webapiSettingsPutPatch(
     if (deviceSettingsKeys.contains("bandIndex")) {
         settings.m_bandIndex = response.getAirspyHfSettings()->getBandIndex() != 0;
     }
+    if (deviceSettingsKeys.contains("fileRecordName")) {
+        settings.m_fileRecordName = *response.getAirspyHfSettings()->getFileRecordName();
+    }
 
     MsgConfigureAirspyHF *msg = MsgConfigureAirspyHF::create(settings, force);
     m_inputMessageQueue.push(msg);
@@ -545,6 +549,33 @@ void AirspyHFInput::webapiFormatDeviceSettings(SWGSDRangel::SWGDeviceSettings& r
     response.getAirspyHfSettings()->setTransverterDeltaFrequency(settings.m_transverterDeltaFrequency);
     response.getAirspyHfSettings()->setTransverterMode(settings.m_transverterMode ? 1 : 0);
     response.getAirspyHfSettings()->setBandIndex(settings.m_bandIndex ? 1 : 0);
+
+    if (response.getAirspyHfSettings()->getFileRecordName()) {
+        *response.getAirspyHfSettings()->getFileRecordName() = settings.m_fileRecordName;
+    } else {
+        response.getAirspyHfSettings()->setFileRecordName(new QString(settings.m_fileRecordName));
+    }
+}
+
+void AirspyHFInput::webapiFormatDeviceReport(SWGSDRangel::SWGDeviceReport& response)
+{
+    response.getAirspyHfReport()->setSampleRates(new QList<SWGSDRangel::SWGSampleRate*>);
+
+    for (std::vector<uint32_t>::const_iterator it = getSampleRates().begin(); it != getSampleRates().end(); ++it)
+    {
+        response.getAirspyHfReport()->getSampleRates()->append(new SWGSDRangel::SWGSampleRate);
+        response.getAirspyHfReport()->getSampleRates()->back()->setRate(*it);
+    }
+}
+
+int AirspyHFInput::webapiReportGet(
+        SWGSDRangel::SWGDeviceReport& response,
+        QString& errorMessage __attribute__((unused)))
+{
+    response.setAirspyHfReport(new SWGSDRangel::SWGAirspyHFReport());
+    response.getAirspyHfReport()->init();
+    webapiFormatDeviceReport(response);
+    return 200;
 }
 
 int AirspyHFInput::webapiRunGet(
