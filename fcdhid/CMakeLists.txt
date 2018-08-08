@@ -13,9 +13,12 @@ set(fcdhid_HEADERS
 	hidapi.h
 )
 
+find_package(LibUSB)
+
 include_directories(
 	.
 	${CMAKE_CURRENT_BINARY_DIR}
+	${LIBUSB_INCLUDE_DIR}
 )
 
 #add_definitions(-DQT_PLUGIN)
